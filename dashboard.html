@@ -10,25 +10,98 @@
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/responsive.css">
 </head>
-<body class="app-page">
+<body class="app-page user-dashboard-page">
   <div class="app-layout">
     <aside class="sidebar" data-nav="user"></aside>
-    <main class="main-content">
-      <header class="topbar">
-        <div><h1 id="greeting">Good morning</h1></div>
+    <main class="main-content dashboard-content">
+      <header class="mobile-appbar">
+        <span class="mobile-menu-lines">☰</span>
+        <a class="brand" href="dashboard.html"><span>Home<span>Harmony</span></span></a>
+        <a class="mobile-settings-link" href="settings.html">⚙</a>
+      </header>
+      <header class="dashboard-hero">
+        <div class="hero-greeting">
+          <h1 id="greeting">Good morning</h1>
+          <p>Here’s what’s happening at home today.</p>
+        </div>
         <img id="topAvatar" class="avatar-img" src="assets/images/avatar.svg" alt="Profile">
       </header>
-      <section id="dashboardGrid" class="dashboard-grid skeleton-area" aria-live="polite">
-        <article class="feature-card purple-card span-2">
-          <div><p>Current responsibility</p><h2 id="currentResponsibility">Loading...</h2><span id="taskMessage">Please take out the trash.</span></div>
+
+      <section class="dashboard-top-grid" aria-live="polite">
+        <article class="turn-spotlight">
+          <div>
+            <h2 id="currentResponsibility">Loading...</h2>
+            <p id="taskMessage">You’re responsible for taking out the trash.</p>
+            <a class="btn turn-link" href="my-turn.html">View My Turn <span>→</span></a>
+          </div>
           <img src="assets/images/bin.svg" alt="Waste bin">
         </article>
-        <article class="info-card"><span class="icon">⏭</span><p>Next up</p><h3 id="nextRoom">Loading...</h3></article>
-        <article class="info-card green"><span class="icon">♻</span><p>Recycling day</p><h3 id="recyclingDay">Loading...</h3></article>
-        <article class="info-card lavender"><span class="icon">🗑</span><p>General waste</p><h3 id="generalWasteDay">Loading...</h3></article>
-        <article class="info-card mint"><span class="icon">🌿</span><p>Garden waste</p><h3 id="gardenWasteDay">Loading...</h3></article>
-        <article class="notice-preview span-2"><p>Latest notice</p><h3 id="latestNoticeTitle">Loading...</h3><span id="latestNoticeText"></span></article>
-        <article class="reminder-card"><span class="icon">🔔</span><p>Weekly reminder</p><h3 id="weeklyReminder">Put bins out the night before.</h3></article>
+
+        <article class="dash-card next-up-card">
+          <p>Next up</p>
+          <h3 id="nextRoomName">Not configured</h3>
+          <div class="mini-person">
+            <img id="nextRoomAvatar" src="assets/images/avatar.svg" alt="">
+            <div><strong id="nextRoomPerson">Next room</strong><span id="nextRoomDates">Upcoming</span></div>
+          </div>
+        </article>
+
+        <article class="dash-card waste-card recycling-tint">
+          <p>Recycling Day <span class="small-mark">♻</span></p>
+          <h3 id="recyclingDay">Not configured</h3>
+          <span>Put the bin out the night before.</span>
+          <b class="corner-icon">▣</b>
+        </article>
+
+        <article class="dash-card notice-tint">
+          <p>House Notice</p>
+          <h3 id="noticeCardTitle">No notices yet</h3>
+          <span id="noticeCardText">Everything is quiet.</span>
+          <b class="corner-icon notice-icon">◔</b>
+        </article>
+      </section>
+
+      <section class="section-heading">
+        <h2>This Week Overview</h2>
+        <div><span id="weekRange">This week</span><span>‹</span><span>›</span></div>
+      </section>
+      <section class="week-overview-grid">
+        <article class="overview-pill"><span class="pill-icon green-icon">♻</span><div><strong>Recycling Day</strong><b id="overviewRecycling">Not configured</b></div></article>
+        <article class="overview-pill"><span class="pill-icon purple-icon">▥</span><div><strong>General Waste</strong><b id="overviewGeneral">Not configured</b></div></article>
+        <article class="overview-pill"><span class="pill-icon mint-icon">♧</span><div><strong>Garden Waste</strong><b id="overviewGarden">Not configured</b></div></article>
+        <article class="overview-pill"><span class="pill-icon blue-icon">▣</span><div><strong>Update Day</strong><b id="overviewUpdate">Not configured</b></div></article>
+      </section>
+
+      <section class="dashboard-lower-grid">
+        <article class="latest-notice-panel">
+          <div class="panel-title"><h2>Latest Notice</h2><a href="notices.html">View all</a></div>
+          <div class="notice-row">
+            <img src="assets/images/living-room.svg" alt="">
+            <div>
+              <h3 id="latestNoticeTitle">No notices yet</h3>
+              <p id="latestNoticeText">Everything is quiet.</p>
+              <span id="latestNoticeMeta" class="meta">HomeHarmony</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="rotation-panel">
+          <div class="panel-title"><h2>Weekly Rotation</h2><a href="schedule.html">View schedule</a></div>
+          <div id="dashboardRotation" class="dashboard-rotation"></div>
+        </article>
+
+        <article class="activity-panel">
+          <div class="panel-title"><h2>Recent Activity</h2><a href="history.html">View all history</a></div>
+          <div id="dashboardActivity" class="dashboard-activity"></div>
+        </article>
+
+        <article class="encouragement-card">
+          <img src="assets/images/login-illustration.svg" alt="">
+          <div>
+            <h2 id="encouragementTitle">Keep it up!</h2>
+            <p>Small actions create a happy home.</p>
+          </div>
+        </article>
       </section>
     </main>
   </div>

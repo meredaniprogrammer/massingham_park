@@ -3,9 +3,7 @@ import {
   subscribeHistory, subscribeNotices, subscribeRooms, subscribeSettings, toast, updateRoom
 } from "./firebase.js";
 
-const roomId = localStorage.getItem("homeharmony_admin") === "true" && location.pathname.endsWith("history.html")
-  ? null
-  : requireRoomSession();
+const roomId = requireRoomSession();
 
 nav("user");
 
@@ -26,8 +24,28 @@ function greetingName() {
   return currentRoom?.displayName || currentRoom?.roomName || "there";
 }
 
+function weekRangeText(offset = 0) {
+  const now = new Date();
+  const day = now.getDay() || 7;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - day + 1 + (offset * 7));
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  const format = (date) => date.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  return `${format(monday)} - ${format(sunday)}`;
+}
+
+function escapeHtml(value = "") {
+  return String(value).replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  }[char]));
+}
+
 async function loadCurrentRoom() {
-  if (!roomId) return;
   currentRoom = await getRoom(roomId);
   if (currentRoom && !currentRoom.displayName) location.href = "setup.html";
   const avatar = document.querySelector("#topAvatar");
@@ -37,14 +55,50 @@ async function loadCurrentRoom() {
 function renderDashboard() {
   const greeting = document.querySelector("#greeting");
   if (!greeting) return;
-  greeting.textContent = `Good morning, ${greetingName()} ☀️`;
-  document.querySelector("#currentResponsibility").textContent =
-    settings.currentRoom ? (settings.currentRoom === currentRoom?.roomName ? "It's your turn!" : `${roomLabel(settings.currentRoom)} is responsible`) : "Not configured yet";
-  document.querySelector("#nextRoom").textContent = settings.nextRoom ? roomLabel(settings.nextRoom) : "Not configured";
-  document.querySelector("#recyclingDay").textContent = settings.recyclingDay || "Not configured";
-  document.querySelector("#generalWasteDay").textContent = settings.generalWasteDay || "Not configured";
-  document.querySelector("#gardenWasteDay").textContent = settings.gardenWasteDay || "Not configured";
-  document.querySelector("#weeklyReminder").textContent = settings.updateDay ? `Bins rotate every ${settings.updateDay}.` : "Set a weekly update day in admin.";
+
+  const isMyTurn = settings.currentRoom && settings.currentRoom === currentRoom?.roomName;
+  const nextRoomData = rooms.find((room) => room.roomName === settings.nextRoom);
+
+  greeting.textContent = `Good morning, ${greetingName()}!`;
+  document.querySelector("#encouragementTitle") && (document.querySelector("#encouragementTitle").textContent = `Keep it up, ${greetingName()}!`);
+  document.querySelector("#currentResponsibility").textContent = settings.currentRoom
+    ? (isMyTurn ? "It's your turn!" : `${roomLabel(settings.currentRoom)} is responsible`)
+    : "Not configured yet";
+  document.querySelector("#taskMessage") && (document.querySelector("#taskMessage").textContent = isMyTurn
+    ? "You’re responsible for taking out the trash."
+    : "Check the weekly rotation for the current room.");
+
+  document.querySelector("#nextRoom") && (document.querySelector("#nextRoom").textContent = settings.nextRoom ? roomLabel(settings.nextRoom) : "Not configured");
+  document.querySelector("#nextRoomName") && (document.querySelector("#nextRoomName").textContent = settings.nextRoom || "Not configured");
+  document.querySelector("#nextRoomPerson") && (document.querySelector("#nextRoomPerson").textContent = roomLabel(settings.nextRoom));
+  document.querySelector("#nextRoomAvatar") && (document.querySelector("#nextRoomAvatar").src = avatarSrc(nextRoomData));
+  document.querySelector("#nextRoomDates") && (document.querySelector("#nextRoomDates").textContent = "Upcoming turn");
+
+  document.querySelector("#recyclingDay") && (document.querySelector("#recyclingDay").textContent = settings.recyclingDay || "Not configured");
+  document.querySelector("#generalWasteDay") && (document.querySelector("#generalWasteDay").textContent = settings.generalWasteDay || "Not configured");
+  document.querySelector("#gardenWasteDay") && (document.querySelector("#gardenWasteDay").textContent = settings.gardenWasteDay || "Not configured");
+  document.querySelector("#weeklyReminder") && (document.querySelector("#weeklyReminder").textContent = settings.updateDay ? `Bins rotate every ${settings.updateDay}.` : "Set a weekly update day in admin.");
+
+  document.querySelector("#overviewRecycling") && (document.querySelector("#overviewRecycling").textContent = settings.recyclingDay || "Not configured");
+  document.querySelector("#overviewGeneral") && (document.querySelector("#overviewGeneral").textContent = settings.generalWasteDay || "Not configured");
+  document.querySelector("#overviewGarden") && (document.querySelector("#overviewGarden").textContent = settings.gardenWasteDay || "Not configured");
+  document.querySelector("#overviewUpdate") && (document.querySelector("#overviewUpdate").textContent = settings.updateDay || "Not configured");
+  document.querySelector("#weekRange") && (document.querySelector("#weekRange").textContent = weekRangeText());
+
+  renderDashboardRotation();
+}
+
+function renderDashboardRotation() {
+  const target = document.querySelector("#dashboardRotation");
+  if (!target) return;
+  const ordered = [...rooms].sort((a, b) => a.turnOrder - b.turnOrder);
+  target.innerHTML = ordered.map((room, index) => `
+    <div class="rotation-bubble ${room.roomName === settings.currentRoom ? "active" : ""}">
+      <div><span>H</span></div>
+      <strong>${escapeHtml(room.roomName || `Room ${index + 1}`)}</strong>
+      <small>${weekRangeText(index)}</small>
+    </div>
+  `).join("") || `<div class="empty-card">Add rooms in Firestore to build the rotation.</div>`;
 }
 
 function renderSchedule() {
@@ -63,7 +117,7 @@ function renderSchedule() {
   list.innerHTML = rooms.map((room, index) => `
     <div class="timeline-row">
       <img class="avatar" src="${avatarSrc(room)}" alt="">
-      <div><strong>${room.displayName || room.roomName}</strong><div class="meta">${room.roomName}</div></div>
+      <div><strong>${escapeHtml(room.displayName || room.roomName)}</strong><div class="meta">${escapeHtml(room.roomName)}</div></div>
       <span class="pill">${room.roomName === settings.currentRoom ? "This week" : index === 1 ? "Next" : `Week ${index + 1}`}</span>
     </div>
   `).join("") || `<div class="timeline-row"><div><strong>No rooms configured</strong><div class="meta">Add rooms in Firestore to build the rotation.</div></div></div>`;
@@ -71,22 +125,31 @@ function renderSchedule() {
 
 function renderHistory(items) {
   const list = document.querySelector("#historyList");
-  if (!list) return;
-  list.innerHTML = items.map((item) => `
+  if (list) list.innerHTML = items.map((item) => `
     <article class="activity-item reveal">
-      <span class="avatar mini">${(item.roomId || "H").slice(-1)}</span>
-      <div><strong>${item.action}</strong><div class="meta">${formatDate(item.createdAt)}</div></div>
-      <span class="status">${item.action.includes("not available") ? "!" : "✓"}</span>
+      <span class="avatar mini">${escapeHtml((item.roomId || "H").slice(-1))}</span>
+      <div><strong>${escapeHtml(item.action || "House activity")}</strong><div class="meta">${formatDate(item.createdAt)}</div></div>
+      <span class="status">${item.action?.includes("not available") ? "!" : "✓"}</span>
     </article>
   `).join("");
+
+  const dashboardList = document.querySelector("#dashboardActivity");
+  if (!dashboardList) return;
+  dashboardList.innerHTML = items.slice(0, 3).map((item, index) => `
+    <div class="activity-line">
+      <span class="activity-dot dot-${index}">${item.action?.includes("notice") ? "!" : "✓"}</span>
+      <div><strong>${escapeHtml(item.action || "House activity")}</strong><small>${formatDate(item.createdAt)}</small></div>
+    </div>
+  `).join("") || `<div class="empty-card">No recent activity yet.</div>`;
 }
 
 function renderLatestNotice(items) {
-  const title = document.querySelector("#latestNoticeTitle");
-  if (!title) return;
   const latest = items[0];
-  title.textContent = latest?.title || "No notices yet";
-  document.querySelector("#latestNoticeText").textContent = latest?.message || "Everything is quiet.";
+  document.querySelector("#latestNoticeTitle") && (document.querySelector("#latestNoticeTitle").textContent = latest?.title || "No notices yet");
+  document.querySelector("#latestNoticeText") && (document.querySelector("#latestNoticeText").textContent = latest?.message || "Everything is quiet.");
+  document.querySelector("#noticeCardTitle") && (document.querySelector("#noticeCardTitle").textContent = latest?.title || "No notices yet");
+  document.querySelector("#noticeCardText") && (document.querySelector("#noticeCardText").textContent = latest?.message || "Everything is quiet.");
+  document.querySelector("#latestNoticeMeta") && (document.querySelector("#latestNoticeMeta").textContent = latest ? `${latest.createdBy || "Admin"} · ${formatDate(latest.createdAt)}` : "HomeHarmony");
 }
 
 function nextPair() {
