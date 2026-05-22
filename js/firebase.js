@@ -114,13 +114,36 @@ export async function validateAdmin(adminId, pin) {
   if (isDemo) return false;
   const cleanAdminId = String(adminId || "").trim().toLowerCase();
   const cleanPin = String(pin || "").trim();
-  const snap = await getDocs(collection(db, "admin"));
-  return snap.docs.some((adminDoc) => {
+
+  const matchesAdmin = (adminDoc) => {
     const admin = adminDoc.data();
     const storedAdminId = String(admin.adminId || adminDoc.id || "").trim().toLowerCase();
     const storedPin = String(admin.pin || "").trim();
     return storedAdminId === cleanAdminId && storedPin === cleanPin;
-  });
+  };
+
+  const collectionsToCheck = ["admin", "rooms"];
+
+  for (const collectionName of collectionsToCheck) {
+    const directDoc = await getDoc(doc(db, collectionName, cleanAdminId));
+    if (directDoc.exists() && matchesAdmin(directDoc)) return true;
+
+    const byId = await getDocs(query(collection(db, collectionName), where("adminId", "==", String(adminId || "").trim()), limit(5)));
+    if (byId.docs.some(matchesAdmin)) return true;
+
+    const numericPin = Number(cleanPin);
+    if (Number.isFinite(numericPin)) {
+      const byIdAndNumericPin = await getDocs(query(
+        collection(db, collectionName),
+        where("adminId", "==", String(adminId || "").trim()),
+        where("pin", "==", numericPin),
+        limit(1)
+      ));
+      if (!byIdAndNumericPin.empty) return true;
+    }
+  }
+
+  return false;
 }
 
 export async function getRoom(id) {
