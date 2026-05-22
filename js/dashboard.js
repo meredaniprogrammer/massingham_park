@@ -7,7 +7,7 @@ const roomId = localStorage.getItem("homeharmony_admin") === "true" && location.
   ? null
   : requireRoomSession();
 
-nav(localStorage.getItem("homeharmony_admin") === "true" ? "admin" : "user");
+nav("user");
 
 let currentRoom;
 let rooms = [];

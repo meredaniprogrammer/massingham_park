@@ -49,6 +49,9 @@ export function currentRoomId() {
 }
 
 export function requireRoomSession() {
+  if (localStorage.getItem("homeharmony_admin") === "true") {
+    localStorage.removeItem("homeharmony_admin");
+  }
   const id = currentRoomId();
   if (!id) location.href = "login.html";
   return id;
@@ -68,7 +71,7 @@ export function nav(role = "user") {
     ["Dashboard", "dashboard.html", "⌂"], ["My Turn", "my-turn.html", "✓"], ["Schedule", "schedule.html", "◷"], ["Notices", "notices.html", "✉"], ["History", "history.html", "◌"], ["Settings", "settings.html", "⚙"]
   ];
   const adminLinks = [
-    ["Admin", "admin-dashboard.html", "⌂"], ["Rooms", "room-management.html", "▦"], ["Notices", "notice-management.html", "✉"], ["History", "history.html", "◌"], ["Settings", "settings.html", "⚙"]
+    ["Admin", "admin-dashboard.html", "⌂"], ["Rooms", "room-management.html", "▦"], ["Notices", "notice-management.html", "✉"], ["History", "admin-history.html", "◌"], ["Settings", "settings.html", "⚙"]
   ];
   const links = role === "admin" ? adminLinks : userLinks;
   const path = location.pathname.split("/").pop() || "index.html";

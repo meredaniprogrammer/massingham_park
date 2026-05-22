@@ -15,6 +15,7 @@ roomForm?.addEventListener("submit", async (event) => {
       toast("Room code not recognised.");
       return;
     }
+    localStorage.removeItem("homeharmony_admin");
     localStorage.setItem("homeharmony_room_doc_id", room.id);
     localStorage.setItem("homeharmony_room_name", room.roomName);
     location.href = room.displayName ? "dashboard.html" : "setup.html";
@@ -38,6 +39,8 @@ adminForm?.addEventListener("submit", async (event) => {
       toast("Admin details do not match.");
       return;
     }
+    localStorage.removeItem("homeharmony_room_doc_id");
+    localStorage.removeItem("homeharmony_room_name");
     localStorage.setItem("homeharmony_admin", "true");
     location.href = "admin-dashboard.html";
   } catch (error) {

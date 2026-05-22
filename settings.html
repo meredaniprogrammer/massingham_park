@@ -23,6 +23,11 @@
           </div>
           <label for="displayName">Display name</label>
           <input id="displayName" name="displayName" required>
+          <label for="loginCode">Login ID</label>
+          <div class="inline-field">
+            <input id="loginCode" name="loginCode" autocomplete="off" required>
+            <button id="generateLoginCode" class="btn btn-soft" type="button">Reset ID</button>
+          </div>
           <div class="setting-line"><span>Theme</span><select id="theme"><option>Light lavender</option><option>Warm white</option></select></div>
           <div class="setting-line"><span>Notifications</span><label class="switch"><input id="notifications" type="checkbox" checked><span></span></label></div>
           <button class="btn btn-primary full" type="submit">Save settings</button>

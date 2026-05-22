@@ -61,6 +61,7 @@
   .turn-panel { grid-template-columns: 1fr; }
   .turn-photo { height: 280px; }
   .form-grid { grid-template-columns: 1fr; }
+  .inline-field { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 620px) {
