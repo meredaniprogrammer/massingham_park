@@ -37,7 +37,7 @@
     bottom: 12px;
     z-index: 20;
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(48px, 1fr));
     gap: 4px;
     padding: 8px;
     border-radius: 24px;

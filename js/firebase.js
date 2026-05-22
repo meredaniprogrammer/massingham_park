@@ -76,9 +76,8 @@ export function nav(role = "user") {
   const links = role === "admin" ? adminLinks : userLinks;
   const path = location.pathname.split("/").pop() || "index.html";
   document.querySelectorAll("[data-nav]").forEach((target) => {
-    const compact = target.classList.contains("bottom-nav");
     target.innerHTML = `<a class="brand nav-brand" href="dashboard.html"><span class="brand-mark">H</span><span>Home<span>Harmony</span></span></a>` +
-      links.slice(0, compact ? 5 : links.length).map(([label, href, icon]) => (
+      links.map(([label, href, icon]) => (
         `<a class="nav-link ${path === href ? "active" : ""}" href="${href}"><span>${icon}</span><span>${label}</span></a>`
       )).join("");
   });
