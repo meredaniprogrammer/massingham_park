@@ -875,9 +875,55 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); box-sh
 .dashboard-rotation {
   margin-top: 20px;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 18px;
-  text-align: center;
+  gap: 14px;
+  text-align: left;
+}
+.rotation-assignment {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 86px;
+  padding: 16px 18px;
+  border: 1px solid #f0edf6;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #ffffff, #fbf9ff);
+  box-shadow: 0 14px 30px rgba(31, 22, 66, .06);
+}
+.rotation-assignment.active {
+  border-color: rgba(108, 77, 255, .22);
+  background: linear-gradient(135deg, #ffffff, #f4efff);
+}
+.rotation-assignment .avatar {
+  flex: 0 0 54px;
+  width: 54px;
+  height: 54px;
+}
+.rotation-assignment-copy {
+  min-width: 0;
+}
+.rotation-assignment-copy strong,
+.rotation-assignment-copy small,
+.rotation-assignment-copy span {
+  display: block;
+}
+.rotation-assignment-copy small,
+.rotation-assignment-copy span {
+  color: var(--muted);
+}
+.rotation-assignment-copy small {
+  margin-top: 3px;
+}
+.rotation-assignment-copy span {
+  margin-top: 7px;
+  font-weight: 800;
+}
+.rotation-assignment b {
+  margin-left: auto;
+  padding: 9px 13px;
+  border-radius: 999px;
+  color: var(--primary);
+  background: var(--accent);
+  white-space: nowrap;
 }
 .rotation-bubble div {
   width: 78px;
@@ -1035,6 +1081,19 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); box-sh
 .toast { padding: 14px 16px; border-radius: 16px; color: white; background: #171426; box-shadow: var(--shadow); animation: toast .25s ease both; }
 .modal-backdrop { position: fixed; inset: 0; background: rgba(23,20,38,.35); display: grid; place-items: center; z-index: 25; padding: 20px; }
 .modal { width: min(420px, 100%); padding: 24px; border-radius: 24px; background: white; box-shadow: var(--shadow); }
+.modal h2 {
+  margin: 0 0 8px;
+}
+.modal .muted {
+  margin: 0 0 18px;
+}
+.unavailable-modal {
+  display: grid;
+  gap: 12px;
+}
+.unavailable-modal .action-row {
+  margin-top: 8px;
+}
 .skeleton { position: relative; overflow: hidden; color: transparent !important; background: #ece9f6 !important; border-radius: 12px; }
 .skeleton::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(255,255,255,.7), transparent); animation: shimmer 1.3s infinite; }
 .reveal { animation: fadeUp .55s ease both; }

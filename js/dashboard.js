@@ -183,6 +183,25 @@ function reminderTextForDate(collectionDate) {
   return `Put the bin out on ${formatCollectionDate(addDays(collectionDate, -1))} night.`;
 }
 
+function isSameCalendarDate(first, second) {
+  return first && second &&
+    first.getFullYear() === second.getFullYear() &&
+    first.getMonth() === second.getMonth() &&
+    first.getDate() === second.getDate();
+}
+
+function canCompleteTask(collectionDate) {
+  if (!collectionDate) return false;
+  const now = new Date();
+  return isSameCalendarDate(now, collectionDate) && now.getHours() >= 21;
+}
+
+function completionLockText(collectionDate) {
+  if (!collectionDate) return "Set trash date in admin";
+  if (canCompleteTask(collectionDate)) return "I've done it";
+  return `Available from 9pm on ${formatCollectionDate(collectionDate)}`;
+}
+
 function collectionLabel(info) {
   if (!info) return "No collection date";
   return `${info.types.join(" + ")} · ${formatCollectionDate(info.date)}`;
@@ -321,10 +340,10 @@ function renderDashboard() {
   greeting.textContent = `${timeGreeting()}, ${greetingName()}!`;
   document.querySelector("#encouragementTitle") && (document.querySelector("#encouragementTitle").textContent = `Keep it up, ${greetingName()}!`);
   document.querySelector("#currentResponsibility").textContent = settings.currentRoom
-    ? (isMyTurn ? "It's your turn!" : `${roomLabel(settings.currentRoom)} is responsible`)
+    ? (isMyTurn ? "It's your turn next!" : `${roomLabel(settings.currentRoom)} is responsible`)
     : "Not configured yet";
   document.querySelector("#taskMessage") && (document.querySelector("#taskMessage").textContent = isMyTurn
-    ? "You’re responsible for taking out the trash."
+    ? "You’re responsible for taking out the trash next time."
     : "Check the weekly rotation for the current room.");
 
   document.querySelector("#nextRoom") && (document.querySelector("#nextRoom").textContent = settings.nextRoom ? roomLabel(settings.nextRoom) : "Not configured");
@@ -357,11 +376,14 @@ function renderDashboardRotation() {
   if (!target) return;
   const assignments = configuredAssignments();
   target.innerHTML = assignments.map((assignment) => `
-    <div class="rotation-bubble ${assignment.key === "current" ? "active" : ""}">
-      <div><span>H</span></div>
-      <strong>${escapeHtml(assignment.room.displayName || assignment.room.roomName || "Room")}</strong>
-      <small>${escapeHtml(assignment.room.roomName || "")}</small>
-      <small>${collectionLabelForTask(assignment.info)}</small>
+    <div class="rotation-assignment ${assignment.key === "current" ? "active" : ""}">
+      <img class="avatar" src="${avatarSrc(assignment.room)}" alt="">
+      <div class="rotation-assignment-copy">
+        <strong>${escapeHtml(assignment.room.displayName || assignment.room.roomName || "Room")}</strong>
+        <small>${escapeHtml(assignment.room.roomName || "")}</small>
+        <span>${escapeHtml(collectionLabelForTask(assignment.info))}</span>
+      </div>
+      <b>${escapeHtml(assignment.label)}</b>
     </div>
   `).join("") || `<div class="empty-card">Assign room, trash type and date in admin to build the rotation.</div>`;
 }
@@ -421,61 +443,125 @@ function renderLatestNotice(items) {
   document.querySelector("#latestNoticeMeta") && (document.querySelector("#latestNoticeMeta").textContent = latest ? `${latest.createdBy || "Admin"} · ${formatDate(latest.createdAt)}` : "HomeHarmony");
 }
 
-function nextPair() {
+function nextRoomAfter(room) {
   const ordered = [...rooms].sort((a, b) => a.turnOrder - b.turnOrder);
-  if (!ordered.length) return { next: null, after: null };
-  const currentIndex = Math.max(0, ordered.findIndex((room) => roomMatches(room, settings.currentRoom)));
-  const next = ordered[(currentIndex + 1) % ordered.length];
-  const after = ordered[(currentIndex + 2) % ordered.length];
+  if (!ordered.length || !room) return null;
+  const index = ordered.findIndex((item) => item.id === room.id);
+  if (index === -1) return null;
+  return ordered[(index + 1) % ordered.length];
+}
+
+function nextPair() {
+  const current = findRoom(settings.currentRoom);
+  const next = findRoom(settings.nextRoom) || nextRoomAfter(current);
+  const after = nextRoomAfter(next);
   return { next, after };
 }
 
-async function moveToNext(action) {
+async function completeCurrentTurn() {
   const { next, after } = nextPair();
   if (!next || !after) {
     toast("No room rotation has been configured yet.");
     return;
   }
+  const completedTask = collectionLabelForTask(myTurnInfo());
   await saveSettings({
     currentRoom: next.id,
-    currentTrashType: settings.nextTrashType || settings.currentTrashType || "General waste",
-    currentTrashDate: settings.nextTrashDate || settings.currentTrashDate || "",
+    currentTrashType: settings.nextTrashType || "",
+    currentTrashDate: settings.nextTrashDate || "",
     nextRoom: after.id,
     nextTrashType: "",
     nextTrashDate: ""
   });
-  await createHistory(action, roomIdentity(currentRoom) || settings.currentRoom);
+  await createHistory(`${greetingName()} completed ${completedTask}`, roomIdentity(currentRoom) || settings.currentRoom);
+}
+
+async function passCurrentTurn(title, note) {
+  const { next, after } = nextPair();
+  if (!next || !after) {
+    toast("No room rotation has been configured yet.");
+    return;
+  }
+  const reason = `${title}: ${note}`;
+  await updateRoom(roomId, { isAvailable: false, unavailableReason: reason });
+  await saveSettings({
+    currentRoom: next.id,
+    currentTrashType: settings.currentTrashType || "",
+    currentTrashDate: settings.currentTrashDate || "",
+    nextRoom: after.id,
+    nextTrashType: "",
+    nextTrashDate: ""
+  });
+  await createHistory(`${greetingName()} was not available - ${reason}`, roomIdentity(currentRoom) || settings.currentRoom);
+}
+
+function showUnavailableModal(onSubmit) {
+  const root = document.querySelector("#modal-root");
+  if (!root) return;
+  root.innerHTML = `
+    <div class="modal-backdrop">
+      <form class="modal unavailable-modal">
+        <h2>Why are you not available?</h2>
+        <p class="muted">Add a short note so everyone knows why this turn is being passed on.</p>
+        <label for="unavailableTitle">Title</label>
+        <input id="unavailableTitle" required placeholder="Example: Away tonight">
+        <label for="unavailableNote">Note</label>
+        <textarea id="unavailableNote" rows="4" required placeholder="Example: I am away tonight."></textarea>
+        <div class="action-row inline">
+          <button type="button" class="btn btn-soft" data-close-modal>Cancel</button>
+          <button type="submit" class="btn btn-primary">Publish and pass turn</button>
+        </div>
+      </form>
+    </div>
+  `;
+  root.querySelector("[data-close-modal]")?.addEventListener("click", () => {
+    root.innerHTML = "";
+  });
+  root.querySelector("form")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const title = root.querySelector("#unavailableTitle")?.value.trim();
+    const note = root.querySelector("#unavailableNote")?.value.trim();
+    if (!title || !note) {
+      toast("Please add a title and note before publishing.");
+      return;
+    }
+    await onSubmit(title, note);
+    root.innerHTML = "";
+  });
 }
 
 function bindTurnActions() {
   const title = document.querySelector("#turnTitle");
   const isMyTurn = settings.currentRoom && roomMatches(currentRoom, settings.currentRoom);
   if (title) title.textContent = settings.currentRoom
-    ? (isMyTurn ? `It's your turn, ${greetingName()}!` : `Your next turn, ${greetingName()}`)
+    ? (isMyTurn ? `It's your turn NEXT, ${greetingName()}!` : `Your next turn, ${greetingName()}`)
     : "No active turn configured";
   const userCollection = myTurnInfo();
   document.querySelector("#trashDate") && (document.querySelector("#trashDate").textContent = userCollection ? collectionLabelForTask(userCollection) : "Not configured");
   document.querySelector("#trashReminder") && (document.querySelector("#trashReminder").textContent = reminderTextForDate(userCollection?.date));
   const completeButton = document.querySelector("#completeTask");
   const unavailableButton = document.querySelector("#unavailableTask");
-  if (completeButton) completeButton.disabled = !isMyTurn;
+  const canComplete = isMyTurn && canCompleteTask(userCollection?.date);
+  if (completeButton) completeButton.disabled = !canComplete;
   if (unavailableButton) unavailableButton.disabled = !isMyTurn;
-  if (completeButton && !isMyTurn) completeButton.textContent = "Not your active turn yet";
+  if (completeButton) completeButton.textContent = isMyTurn ? completionLockText(userCollection?.date) : "Not your active turn yet";
   if (unavailableButton && !isMyTurn) unavailableButton.textContent = "Only active on your turn";
-  document.querySelector("#completeTask")?.addEventListener("click", async () => {
+  if (unavailableButton && isMyTurn) unavailableButton.textContent = "I'm not available";
+  if (completeButton) completeButton.onclick = async () => {
     if (!loggedInRoomMatches(settings.currentRoom)) return toast("This turn belongs to another room.");
-    await moveToNext(`${greetingName()} completed the task`);
+    if (!canCompleteTask(userCollection?.date)) return toast("This can only be marked done from 9pm on trash day.");
+    await completeCurrentTurn();
     toast("Nice, task completed.");
     setTimeout(() => location.href = "dashboard.html", 600);
-  }, { once: true });
-  document.querySelector("#unavailableTask")?.addEventListener("click", async () => {
+  };
+  if (unavailableButton) unavailableButton.onclick = async () => {
     if (!loggedInRoomMatches(settings.currentRoom)) return toast("This turn belongs to another room.");
-    const reason = prompt("Reason for unavailability?");
-    await updateRoom(roomId, { isAvailable: false, unavailableReason: reason || "Not available" });
-    await moveToNext(`${greetingName()} was not available`);
-    toast("Responsibility passed to the next room.");
-    setTimeout(() => location.href = "dashboard.html", 600);
-  }, { once: true });
+    showUnavailableModal(async (title, note) => {
+      await passCurrentTurn(title, note);
+      toast("Reason published and responsibility passed on.");
+      setTimeout(() => location.href = "dashboard.html", 600);
+    });
+  };
 }
 
 async function init() {
