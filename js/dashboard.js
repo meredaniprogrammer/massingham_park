@@ -16,8 +16,26 @@ function avatarSrc(room) {
 }
 
 function roomLabel(roomName) {
-  const room = rooms.find((item) => item.roomName === roomName);
+  const room = findRoom(roomName);
   return room?.displayName || roomName || "Room";
+}
+
+function normalizeRoomKey(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function roomMatches(room, value) {
+  const key = normalizeRoomKey(value);
+  return key && [room?.roomName, room?.displayName, room?.id].some((candidate) => normalizeRoomKey(candidate) === key);
+}
+
+function findRoom(value) {
+  return rooms.find((room) => roomMatches(room, value));
+}
+
+function roomIdentity(roomOrName) {
+  if (typeof roomOrName === "object" && roomOrName) return roomOrName.roomName || roomOrName.displayName || roomOrName.id || "";
+  return findRoom(roomOrName)?.roomName || roomOrName || "";
 }
 
 function greetingName() {
@@ -110,13 +128,15 @@ function collectionSchedule() {
 }
 
 function turnCollectionInfo(roomName) {
-  if (!roomName) return null;
+  const targetRoomName = roomIdentity(roomName);
+  const currentResponsibleRoom = roomIdentity(settings.currentRoom);
+  if (!targetRoomName) return null;
   const schedule = collectionSchedule();
   if (!schedule.length) return null;
   const ordered = [...rooms].sort((a, b) => a.turnOrder - b.turnOrder);
   if (!ordered.length) return schedule[0];
-  const currentIndex = Math.max(0, ordered.findIndex((room) => room.roomName === settings.currentRoom));
-  const roomIndex = ordered.findIndex((room) => room.roomName === roomName);
+  const currentIndex = Math.max(0, ordered.findIndex((room) => roomMatches(room, currentResponsibleRoom)));
+  const roomIndex = ordered.findIndex((room) => roomMatches(room, targetRoomName));
   if (roomIndex === -1) return schedule[0];
   const scheduleOffset = (roomIndex - currentIndex + ordered.length) % ordered.length;
   if (schedule[scheduleOffset]) return schedule[scheduleOffset];
@@ -173,8 +193,8 @@ function renderDashboard() {
   const greeting = document.querySelector("#greeting");
   if (!greeting) return;
 
-  const isMyTurn = settings.currentRoom && settings.currentRoom === currentRoom?.roomName;
-  const nextRoomData = rooms.find((room) => room.roomName === settings.nextRoom);
+  const isMyTurn = settings.currentRoom && roomMatches(currentRoom, settings.currentRoom);
+  const nextRoomData = findRoom(settings.nextRoom);
 
   greeting.textContent = `${timeGreeting()}, ${greetingName()}!`;
   document.querySelector("#encouragementTitle") && (document.querySelector("#encouragementTitle").textContent = `Keep it up, ${greetingName()}!`);
@@ -215,7 +235,7 @@ function renderDashboardRotation() {
   if (!target) return;
   const ordered = [...rooms].sort((a, b) => a.turnOrder - b.turnOrder);
   target.innerHTML = ordered.map((room, index) => `
-    <div class="rotation-bubble ${room.roomName === settings.currentRoom ? "active" : ""}">
+    <div class="rotation-bubble ${roomMatches(room, settings.currentRoom) ? "active" : ""}">
       <div><span>H</span></div>
       <strong>${escapeHtml(room.roomName || `Room ${index + 1}`)}</strong>
       <small>${(() => {
@@ -246,7 +266,7 @@ function renderSchedule() {
     <div class="timeline-row">
       <img class="avatar" src="${avatarSrc(room)}" alt="">
       <div><strong>${escapeHtml(room.displayName || room.roomName)}</strong><div class="meta">${escapeHtml(room.roomName)}</div></div>
-      <span class="pill">${room.roomName === settings.currentRoom ? "This week" : index === 1 ? "Next" : `Week ${index + 1}`}</span>
+      <span class="pill">${roomMatches(room, settings.currentRoom) ? "This week" : index === 1 ? "Next" : `Week ${index + 1}`}</span>
     </div>
   `).join("") || `<div class="timeline-row"><div><strong>No rooms configured</strong><div class="meta">Add rooms in Firestore to build the rotation.</div></div></div>`;
 }
@@ -283,7 +303,7 @@ function renderLatestNotice(items) {
 function nextPair() {
   const ordered = [...rooms].sort((a, b) => a.turnOrder - b.turnOrder);
   if (!ordered.length) return { next: null, after: null };
-  const currentIndex = Math.max(0, ordered.findIndex((room) => room.roomName === settings.currentRoom));
+  const currentIndex = Math.max(0, ordered.findIndex((room) => roomMatches(room, settings.currentRoom)));
   const next = ordered[(currentIndex + 1) % ordered.length];
   const after = ordered[(currentIndex + 2) % ordered.length];
   return { next, after };
@@ -296,23 +316,23 @@ async function moveToNext(action) {
     return;
   }
   await saveSettings({ currentRoom: next.roomName, nextRoom: after.roomName });
-  await createHistory(action, currentRoom?.roomName || settings.currentRoom);
+  await createHistory(action, roomIdentity(currentRoom) || settings.currentRoom);
 }
 
 function bindTurnActions() {
   const title = document.querySelector("#turnTitle");
-  if (title) title.textContent = settings.currentRoom ? (settings.currentRoom === currentRoom?.roomName ? `It's your turn, ${greetingName()}!` : `${roomLabel(settings.currentRoom)} has this turn`) : "No active turn configured";
+  if (title) title.textContent = settings.currentRoom ? (roomMatches(currentRoom, settings.currentRoom) ? `It's your turn, ${greetingName()}!` : `${roomLabel(settings.currentRoom)} has this turn`) : "No active turn configured";
   const userCollection = turnCollectionInfo(currentRoom?.roomName);
   document.querySelector("#trashDate") && (document.querySelector("#trashDate").textContent = userCollection ? collectionLabel(userCollection) : "Not configured");
   document.querySelector("#trashReminder") && (document.querySelector("#trashReminder").textContent = reminderTextForDate(userCollection?.date));
   document.querySelector("#completeTask")?.addEventListener("click", async () => {
-    if (settings.currentRoom !== currentRoom?.roomName) return toast("This turn belongs to another room.");
+    if (!roomMatches(currentRoom, settings.currentRoom)) return toast("This turn belongs to another room.");
     await moveToNext(`${greetingName()} completed the task`);
     toast("Nice, task completed.");
     setTimeout(() => location.href = "dashboard.html", 600);
   }, { once: true });
   document.querySelector("#unavailableTask")?.addEventListener("click", async () => {
-    if (settings.currentRoom !== currentRoom?.roomName) return toast("This turn belongs to another room.");
+    if (!roomMatches(currentRoom, settings.currentRoom)) return toast("This turn belongs to another room.");
     const reason = prompt("Reason for unavailability?");
     await updateRoom(roomId, { isAvailable: false, unavailableReason: reason || "Not available" });
     await moveToNext(`${greetingName()} was not available`);
