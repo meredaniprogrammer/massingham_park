@@ -10,25 +10,47 @@
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/responsive.css">
 </head>
-<body class="auth-page">
-  <main class="auth-shell">
-    <section class="auth-art reveal">
-      <a class="brand" href="index.html"><span class="brand-mark">H</span><span>Home<span>Harmony</span></span></a>
-      <img src="assets/images/login-illustration.svg" alt="Housemates sharing a tidy home">
-      <h1>Welcome back! 👋</h1>
-      <p>Use your private room code to enter your shared home dashboard.</p>
+<body class="auth-page login-showcase">
+  <main class="login-experience">
+    <section class="login-story reveal">
+      <header class="login-story-top">
+        <a class="brand" href="index.html"><span class="brand-mark">H</span><span>Home<span>Harmony</span></span></a>
+        <a class="admin-pill" href="admin-login.html"><span class="ui-icon shield"></span> Admin Login</a>
+      </header>
+      <div class="story-content">
+        <p class="wall-print">A happy<br>home<br>runs<br>together.</p>
+        <div class="story-copy">
+          <h1>Welcome home <span>♥</span></h1>
+          <p>Manage chores, waste days, notices and more together.</p>
+          <div class="feature-stack">
+            <article><span class="ui-icon rooms"></span><div><strong>4 Rooms</strong><small>Stay organised together</small></div></article>
+            <article><span class="ui-icon calendar"></span><div><strong>Weekly Updates</strong><small>Stay on top of waste days</small></div></article>
+            <article><span class="ui-icon bell"></span><div><strong>Smart Reminders</strong><small>Never miss a collection day</small></div></article>
+          </div>
+        </div>
+      </div>
+      <aside class="privacy-float"><span class="ui-icon shield"></span><div><strong>Private. Simple. Secure.</strong><small>No sign-ups. Just your room ID.</small></div></aside>
     </section>
-    <section class="auth-card reveal delay-1">
-      <h2>Room login</h2>
-      <p class="muted">No email or password required.</p>
+    <section class="login-panel reveal delay-1">
+      <div class="login-orb"><span class="brand-mark">H</span></div>
+      <h2>Room Login</h2>
+      <p class="muted">Enter your room ID to continue</p>
       <form id="roomLoginForm" class="form-stack">
         <label for="roomCode">Room ID</label>
-        <input id="roomCode" name="roomCode" placeholder="Enter your room code" autocomplete="off" required>
-        <button class="btn btn-primary full" type="submit">Continue</button>
+        <div class="input-with-icon">
+          <span class="ui-icon key"></span>
+          <input id="roomCode" name="roomCode" placeholder="Enter your room code" autocomplete="off" required>
+        </div>
+        <div class="login-note"><span class="ui-icon shield"></span><p>Use the room ID provided by your house admin.</p></div>
+        <button class="btn btn-primary full arrow-btn" type="submit">Continue <span>→</span></button>
       </form>
-      <a class="text-link" href="admin-login.html">Admin login</a>
+      <p class="privacy-note"><span class="ui-icon shield inline"></span> Your data is safe and private.<br>We don’t collect personal information.</p>
     </section>
   </main>
+  <nav class="login-mobile-tabs">
+    <a class="active" href="login.html"><span class="ui-icon lock"></span> Login</a>
+    <a href="admin-login.html"><span class="ui-icon shield"></span> Admin Login</a>
+  </nav>
   <div id="toast-root"></div>
   <script src="js/auth.js" type="module"></script>
 </body>
