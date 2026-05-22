@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard | HomeHarmony</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body class="app-page">
+  <div class="app-layout">
+    <aside class="sidebar" data-nav="user"></aside>
+    <main class="main-content">
+      <header class="topbar">
+        <div><p class="eyebrow">Dashboard</p><h1 id="greeting">Good morning</h1></div>
+        <img id="topAvatar" class="avatar-img" src="assets/images/avatar.svg" alt="Profile">
+      </header>
+      <section id="dashboardGrid" class="dashboard-grid skeleton-area" aria-live="polite">
+        <article class="feature-card purple-card span-2">
+          <div><p>Current responsibility</p><h2 id="currentResponsibility">Loading...</h2><span id="taskMessage">Please take out the trash.</span></div>
+          <img src="assets/images/bin.svg" alt="Waste bin">
+        </article>
+        <article class="info-card"><span class="icon">⏭</span><p>Next up</p><h3 id="nextRoom">Loading...</h3></article>
+        <article class="info-card green"><span class="icon">♻</span><p>Recycling day</p><h3 id="recyclingDay">Loading...</h3></article>
+        <article class="info-card lavender"><span class="icon">🗑</span><p>General waste</p><h3 id="generalWasteDay">Loading...</h3></article>
+        <article class="info-card mint"><span class="icon">🌿</span><p>Garden waste</p><h3 id="gardenWasteDay">Loading...</h3></article>
+        <article class="notice-preview span-2"><p>Latest notice</p><h3 id="latestNoticeTitle">Loading...</h3><span id="latestNoticeText"></span></article>
+        <article class="reminder-card"><span class="icon">🔔</span><p>Weekly reminder</p><h3 id="weeklyReminder">Put bins out the night before.</h3></article>
+      </section>
+    </main>
+  </div>
+  <nav class="bottom-nav" data-nav="user"></nav>
+  <div id="toast-root"></div>
+  <script src="js/dashboard.js" type="module"></script>
+</body>
+</html>

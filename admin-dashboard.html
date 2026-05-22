@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin Dashboard | HomeHarmony</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body class="app-page">
+  <div class="app-layout">
+    <aside class="sidebar" data-nav="admin"></aside>
+    <main class="main-content">
+      <header class="page-header"><h1>Admin dashboard</h1><p>Update weekly waste schedules and responsibilities.</p></header>
+      <section class="admin-grid">
+        <form id="wasteSettingsForm" class="settings-card form-stack">
+          <div class="form-grid">
+            <label>Recycling day<select id="recyclingDayInput"></select></label>
+            <label>General waste day<select id="generalWasteDayInput"></select></label>
+            <label>Garden waste day<select id="gardenWasteDayInput"></select></label>
+            <label>Weekly update day<select id="updateDayInput"></select></label>
+            <label>Current responsible room<select id="currentRoomInput"></select></label>
+            <label>Next room<select id="nextRoomInput"></select></label>
+          </div>
+          <div class="action-row inline"><button class="btn btn-primary" type="submit">Save Updates</button><button id="rotateTasks" class="btn btn-soft" type="button">Rotate Tasks</button><a class="btn btn-soft" href="notice-management.html">Publish Notice</a></div>
+        </form>
+        <section class="notice-preview"><p>Overview</p><h3 id="adminOverview">Loading...</h3><span>Real-time Firestore updates keep the household synced.</span></section>
+      </section>
+    </main>
+  </div>
+  <nav class="bottom-nav" data-nav="admin"></nav>
+  <div id="toast-root"></div>
+  <script src="js/admin.js" type="module"></script>
+</body>
+</html>

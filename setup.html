@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>First-time Setup | HomeHarmony</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body class="auth-page">
+  <main class="auth-shell compact">
+    <section class="auth-card reveal">
+      <a class="brand center" href="index.html"><span class="brand-mark">H</span><span>Home<span>Harmony</span></span></a>
+      <h2>Set up your room</h2>
+      <p class="muted">Choose the name and photo your housemates will see.</p>
+      <form id="setupForm" class="form-stack">
+        <div class="profile-uploader">
+          <img id="profilePreview" src="assets/images/avatar.svg" alt="Profile preview">
+          <input id="profilePhoto" name="profilePhoto" type="file" accept="image/*">
+        </div>
+        <label for="displayName">Display name</label>
+        <input id="displayName" name="displayName" placeholder="Enter display name" required>
+        <button class="btn btn-primary full" type="submit">Save profile</button>
+      </form>
+    </section>
+  </main>
+  <div id="toast-root"></div>
+  <script src="js/settings.js" type="module"></script>
+</body>
+</html>

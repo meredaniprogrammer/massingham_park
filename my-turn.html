@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My Turn | HomeHarmony</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body class="app-page">
+  <div class="app-layout">
+    <aside class="sidebar" data-nav="user"></aside>
+    <main class="main-content narrow">
+      <header class="page-header"><a class="text-link" href="dashboard.html">← Back</a><h1 id="turnTitle">It's your turn</h1><p>Please take out the trash.</p></header>
+      <section class="turn-panel reveal">
+        <img class="turn-photo" src="assets/images/trash-day.svg" alt="Outdoor trash bin">
+        <div class="turn-side">
+          <article class="info-card"><span class="icon">📅</span><p>Trash day</p><h3 id="trashDate">Not configured</h3></article>
+          <article class="info-card"><span class="icon">🔔</span><p>Reminder</p><h3>Put the bin out on Sunday night.</h3></article>
+        </div>
+      </section>
+      <div class="action-row">
+        <button id="completeTask" class="btn btn-primary full">✓ I’ve done it</button>
+        <button id="unavailableTask" class="btn btn-soft full">↻ I’m not available</button>
+      </div>
+    </main>
+  </div>
+  <nav class="bottom-nav" data-nav="user"></nav>
+  <div id="modal-root"></div>
+  <div id="toast-root"></div>
+  <script src="js/dashboard.js" type="module"></script>
+</body>
+</html>

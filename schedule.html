@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Schedule | HomeHarmony</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body class="app-page">
+  <div class="app-layout">
+    <aside class="sidebar" data-nav="user"></aside>
+    <main class="main-content">
+      <header class="page-header"><h1>Schedule</h1><p>Weekly rotation and waste collection days.</p></header>
+      <section class="schedule-layout">
+        <div class="calendar-card reveal"><div class="calendar-head"><button class="icon-btn">‹</button><strong id="calendarMonth">May 2026</strong><button class="icon-btn">›</button></div><div id="calendarGrid" class="calendar-grid"></div></div>
+        <div class="rotation-card reveal delay-1">
+          <h2>Weekly rotation</h2>
+          <div id="rotationList" class="timeline-list"></div>
+        </div>
+        <div class="waste-days reveal delay-2">
+          <article class="info-card green"><span class="icon">♻</span><p>Recycling</p><h3 id="scheduleRecycling">Not configured</h3></article>
+          <article class="info-card lavender"><span class="icon">🗑</span><p>General waste</p><h3 id="scheduleGeneral">Not configured</h3></article>
+          <article class="info-card mint"><span class="icon">🌿</span><p>Garden waste</p><h3 id="scheduleGarden">Not configured</h3></article>
+        </div>
+      </section>
+    </main>
+  </div>
+  <nav class="bottom-nav" data-nav="user"></nav>
+  <script src="js/dashboard.js" type="module"></script>
+</body>
+</html>
