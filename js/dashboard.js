@@ -34,6 +34,14 @@ function timeGreeting() {
 function nextDateForDay(dayName) {
   const normalized = String(dayName || "").trim().toLowerCase();
   if (!normalized || normalized === "none") return "None";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
+    const [year, month, day] = normalized.split("-").map(Number);
+    return new Date(year, month - 1, day).toLocaleDateString("en-GB", {
+      weekday: "long",
+      day: "numeric",
+      month: "long"
+    });
+  }
   const dayIndex = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"].indexOf(normalized);
   if (dayIndex === -1) return dayName || "Not configured";
   const date = new Date();
@@ -92,14 +100,18 @@ function renderDashboard() {
   document.querySelector("#nextRoomAvatar") && (document.querySelector("#nextRoomAvatar").src = avatarSrc(nextRoomData));
   document.querySelector("#nextRoomDates") && (document.querySelector("#nextRoomDates").textContent = "Upcoming turn");
 
-  document.querySelector("#recyclingDay") && (document.querySelector("#recyclingDay").textContent = settings.recyclingDay ? nextDateForDay(settings.recyclingDay) : "Not configured");
-  document.querySelector("#generalWasteDay") && (document.querySelector("#generalWasteDay").textContent = settings.generalWasteDay ? nextDateForDay(settings.generalWasteDay) : "Not configured");
-  document.querySelector("#gardenWasteDay") && (document.querySelector("#gardenWasteDay").textContent = settings.gardenWasteDay ? nextDateForDay(settings.gardenWasteDay) : "Not configured");
+  const recyclingValue = settings.recyclingDate || settings.recyclingDay;
+  const generalWasteValue = settings.generalWasteDate || settings.generalWasteDay;
+  const gardenWasteValue = settings.gardenWasteDate || settings.gardenWasteDay;
+
+  document.querySelector("#recyclingDay") && (document.querySelector("#recyclingDay").textContent = recyclingValue ? nextDateForDay(recyclingValue) : "Not configured");
+  document.querySelector("#generalWasteDay") && (document.querySelector("#generalWasteDay").textContent = generalWasteValue ? nextDateForDay(generalWasteValue) : "Not configured");
+  document.querySelector("#gardenWasteDay") && (document.querySelector("#gardenWasteDay").textContent = gardenWasteValue ? nextDateForDay(gardenWasteValue) : "Not configured");
   document.querySelector("#weeklyReminder") && (document.querySelector("#weeklyReminder").textContent = settings.updateDay && settings.updateDay !== "None" ? `Bins rotate every ${nextDateForDay(settings.updateDay)}.` : "Set a weekly update day in admin.");
 
-  document.querySelector("#overviewRecycling") && (document.querySelector("#overviewRecycling").textContent = settings.recyclingDay ? nextDateForDay(settings.recyclingDay) : "Not configured");
-  document.querySelector("#overviewGeneral") && (document.querySelector("#overviewGeneral").textContent = settings.generalWasteDay ? nextDateForDay(settings.generalWasteDay) : "Not configured");
-  document.querySelector("#overviewGarden") && (document.querySelector("#overviewGarden").textContent = settings.gardenWasteDay ? nextDateForDay(settings.gardenWasteDay) : "Not configured");
+  document.querySelector("#overviewRecycling") && (document.querySelector("#overviewRecycling").textContent = recyclingValue ? nextDateForDay(recyclingValue) : "Not configured");
+  document.querySelector("#overviewGeneral") && (document.querySelector("#overviewGeneral").textContent = generalWasteValue ? nextDateForDay(generalWasteValue) : "Not configured");
+  document.querySelector("#overviewGarden") && (document.querySelector("#overviewGarden").textContent = gardenWasteValue ? nextDateForDay(gardenWasteValue) : "Not configured");
   document.querySelector("#overviewUpdate") && (document.querySelector("#overviewUpdate").textContent = settings.updateDay ? nextDateForDay(settings.updateDay) : "Not configured");
   document.querySelector("#weekRange") && (document.querySelector("#weekRange").textContent = weekRangeText());
 
@@ -122,9 +134,12 @@ function renderDashboardRotation() {
 function renderSchedule() {
   const grid = document.querySelector("#calendarGrid");
   if (!grid) return;
-  document.querySelector("#scheduleRecycling").textContent = settings.recyclingDay ? nextDateForDay(settings.recyclingDay) : "Not configured";
-  document.querySelector("#scheduleGeneral").textContent = settings.generalWasteDay ? nextDateForDay(settings.generalWasteDay) : "Not configured";
-  document.querySelector("#scheduleGarden").textContent = settings.gardenWasteDay ? nextDateForDay(settings.gardenWasteDay) : "Not configured";
+  const recyclingValue = settings.recyclingDate || settings.recyclingDay;
+  const generalWasteValue = settings.generalWasteDate || settings.generalWasteDay;
+  const gardenWasteValue = settings.gardenWasteDate || settings.gardenWasteDay;
+  document.querySelector("#scheduleRecycling").textContent = recyclingValue ? nextDateForDay(recyclingValue) : "Not configured";
+  document.querySelector("#scheduleGeneral").textContent = generalWasteValue ? nextDateForDay(generalWasteValue) : "Not configured";
+  document.querySelector("#scheduleGarden").textContent = gardenWasteValue ? nextDateForDay(gardenWasteValue) : "Not configured";
   const today = new Date();
   document.querySelector("#calendarMonth").textContent = today.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -192,7 +207,8 @@ async function moveToNext(action) {
 function bindTurnActions() {
   const title = document.querySelector("#turnTitle");
   if (title) title.textContent = settings.currentRoom ? (settings.currentRoom === currentRoom?.roomName ? `It's your turn, ${greetingName()}!` : `${roomLabel(settings.currentRoom)} has this turn`) : "No active turn configured";
-  document.querySelector("#trashDate") && (document.querySelector("#trashDate").textContent = settings.generalWasteDay ? nextDateForDay(settings.generalWasteDay) : "Not configured");
+  const generalWasteValue = settings.generalWasteDate || settings.generalWasteDay;
+  document.querySelector("#trashDate") && (document.querySelector("#trashDate").textContent = generalWasteValue ? nextDateForDay(generalWasteValue) : "Not configured");
   document.querySelector("#completeTask")?.addEventListener("click", async () => {
     if (settings.currentRoom !== currentRoom?.roomName) return toast("This turn belongs to another room.");
     await moveToNext(`${greetingName()} completed the task`);

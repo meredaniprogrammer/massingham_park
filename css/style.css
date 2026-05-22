@@ -995,6 +995,21 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); box-sh
 .profile-uploader { display: grid; place-items: center; gap: 12px; }
 .profile-uploader img { width: 112px; height: 112px; object-fit: cover; border-radius: 50%; box-shadow: var(--soft-shadow); }
 .setting-line { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px; border: 1px solid var(--line); border-radius: 16px; }
+.checkbox-line {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: white;
+  color: var(--muted);
+}
+.checkbox-line input {
+  width: auto;
+  min-height: 0;
+}
 .inline-field {
   display: grid;
   grid-template-columns: 1fr auto;

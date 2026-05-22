@@ -18,9 +18,12 @@
       <section class="admin-grid">
         <form id="wasteSettingsForm" class="settings-card form-stack">
           <div class="form-grid">
-            <label>Recycling day<select id="recyclingDayInput"></select></label>
-            <label>General waste day<select id="generalWasteDayInput"></select></label>
-            <label>Garden waste day<select id="gardenWasteDayInput"></select></label>
+            <label>Recycling date<input id="recyclingDateInput" type="date"></label>
+            <label>General waste date<input id="generalWasteDateInput" type="date"></label>
+            <label>Garden waste date<input id="gardenWasteDateInput" type="date"></label>
+            <label class="checkbox-line"><input id="recyclingNoneInput" type="checkbox"> No recycling collection</label>
+            <label class="checkbox-line"><input id="generalWasteNoneInput" type="checkbox"> No general waste collection</label>
+            <label class="checkbox-line"><input id="gardenWasteNoneInput" type="checkbox"> No garden waste collection</label>
             <label>Weekly update day<select id="updateDayInput"></select></label>
             <label>Current responsible room<select id="currentRoomInput"></select></label>
             <label>Next room<select id="nextRoomInput"></select></label>

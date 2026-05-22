@@ -10,6 +10,33 @@ const days = ["None", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "S
 let rooms = [];
 let settings = {};
 
+function setCollectionDate(name, value) {
+  const dateInput = document.querySelector(`#${name}DateInput`);
+  const noneInput = document.querySelector(`#${name}NoneInput`);
+  if (!dateInput || !noneInput) return;
+  const isNone = value === "None";
+  noneInput.checked = isNone;
+  dateInput.disabled = isNone;
+  dateInput.value = isNone ? "" : (value || "");
+}
+
+function readCollectionDate(name) {
+  const dateInput = document.querySelector(`#${name}DateInput`);
+  const noneInput = document.querySelector(`#${name}NoneInput`);
+  if (noneInput?.checked) return "None";
+  return dateInput?.value || "";
+}
+
+function bindNoneToggle(name) {
+  const dateInput = document.querySelector(`#${name}DateInput`);
+  const noneInput = document.querySelector(`#${name}NoneInput`);
+  noneInput?.addEventListener("change", () => {
+    if (!dateInput) return;
+    dateInput.disabled = noneInput.checked;
+    if (noneInput.checked) dateInput.value = "";
+  });
+}
+
 function fillSelect(select, values, valueKey = null) {
   if (!select) return;
   select.innerHTML = values.map((item) => {
@@ -19,14 +46,14 @@ function fillSelect(select, values, valueKey = null) {
 }
 
 function populateAdminForm() {
-  const dayIds = ["recyclingDayInput", "generalWasteDayInput", "gardenWasteDayInput", "updateDayInput"];
+  const dayIds = ["updateDayInput"];
   dayIds.forEach((id) => fillSelect(document.querySelector(`#${id}`), days));
+  setCollectionDate("recycling", settings.recyclingDate || settings.recyclingDay);
+  setCollectionDate("generalWaste", settings.generalWasteDate || settings.generalWasteDay);
+  setCollectionDate("gardenWaste", settings.gardenWasteDate || settings.gardenWasteDay);
   fillSelect(document.querySelector("#currentRoomInput"), rooms, "roomName");
   fillSelect(document.querySelector("#nextRoomInput"), rooms, "roomName");
   const map = {
-    recyclingDayInput: settings.recyclingDay,
-    generalWasteDayInput: settings.generalWasteDay,
-    gardenWasteDayInput: settings.gardenWasteDay,
     updateDayInput: settings.updateDay,
     currentRoomInput: settings.currentRoom,
     nextRoomInput: settings.nextRoom
@@ -60,16 +87,19 @@ function renderRooms() {
 
 document.querySelector("#wasteSettingsForm")?.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const recyclingDayInput = document.querySelector("#recyclingDayInput");
-  const generalWasteDayInput = document.querySelector("#generalWasteDayInput");
-  const gardenWasteDayInput = document.querySelector("#gardenWasteDayInput");
   const updateDayInput = document.querySelector("#updateDayInput");
   const currentRoomInput = document.querySelector("#currentRoomInput");
   const nextRoomInput = document.querySelector("#nextRoomInput");
+  const recyclingDate = readCollectionDate("recycling");
+  const generalWasteDate = readCollectionDate("generalWaste");
+  const gardenWasteDate = readCollectionDate("gardenWaste");
   await saveSettings({
-    recyclingDay: recyclingDayInput.value,
-    generalWasteDay: generalWasteDayInput.value,
-    gardenWasteDay: gardenWasteDayInput.value,
+    recyclingDate,
+    generalWasteDate,
+    gardenWasteDate,
+    recyclingDay: recyclingDate,
+    generalWasteDay: generalWasteDate,
+    gardenWasteDay: gardenWasteDate,
     updateDay: updateDayInput.value,
     currentRoom: currentRoomInput.value,
     nextRoom: nextRoomInput.value
@@ -77,6 +107,8 @@ document.querySelector("#wasteSettingsForm")?.addEventListener("submit", async (
   await createHistory("Admin updated recycling and waste days", "Admin");
   toast("Waste settings saved.");
 });
+
+["recycling", "generalWaste", "gardenWaste"].forEach(bindNoneToggle);
 
 document.querySelector("#rotateTasks")?.addEventListener("click", async () => {
   const ordered = [...rooms].sort((a, b) => a.turnOrder - b.turnOrder);
