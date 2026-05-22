@@ -45,8 +45,8 @@ function findRoom(value) {
 }
 
 function roomIdentity(roomOrName) {
-  if (typeof roomOrName === "object" && roomOrName) return roomOrName.roomName || roomOrName.displayName || roomOrName.id || "";
-  return findRoom(roomOrName)?.roomName || roomOrName || "";
+  if (typeof roomOrName === "object" && roomOrName) return roomOrName.id || roomOrName.roomName || roomOrName.displayName || "";
+  return findRoom(roomOrName)?.id || roomOrName || "";
 }
 
 function greetingName() {
@@ -247,6 +247,23 @@ function myTurnInfo() {
   return assignedTurnInfo(currentRoom);
 }
 
+function configuredAssignments() {
+  return [
+    {
+      key: "current",
+      label: "Current",
+      room: findRoom(settings.currentRoom),
+      info: taskInfo(settings.currentTrashType, settings.currentTrashDate)
+    },
+    {
+      key: "next",
+      label: "Next",
+      room: findRoom(settings.nextRoom),
+      info: taskInfo(settings.nextTrashType, settings.nextTrashDate)
+    }
+  ].filter((item) => item.room && item.info);
+}
+
 function weekRangeText(offset = 0) {
   const now = new Date();
   const day = now.getDay() || 7;
@@ -256,6 +273,25 @@ function weekRangeText(offset = 0) {
   sunday.setDate(monday.getDate() + 6);
   const format = (date) => date.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
   return `${format(monday)} - ${format(sunday)}`;
+}
+
+function currentWeekBounds() {
+  const now = new Date();
+  const day = now.getDay() || 7;
+  const start = new Date(now);
+  start.setDate(now.getDate() - day + 1);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  end.setHours(23, 59, 59, 999);
+  return { start, end };
+}
+
+function formatIfThisWeek(value) {
+  const date = dateFromScheduleValue(value);
+  if (!date) return "None this week";
+  const { start, end } = currentWeekBounds();
+  return date >= start && date <= end ? formatCollectionDate(date) : "None this week";
 }
 
 function escapeHtml(value = "") {
@@ -292,7 +328,7 @@ function renderDashboard() {
     : "Check the weekly rotation for the current room.");
 
   document.querySelector("#nextRoom") && (document.querySelector("#nextRoom").textContent = settings.nextRoom ? roomLabel(settings.nextRoom) : "Not configured");
-  document.querySelector("#nextRoomName") && (document.querySelector("#nextRoomName").textContent = settings.nextRoom || "Not configured");
+  document.querySelector("#nextRoomName") && (document.querySelector("#nextRoomName").textContent = settings.nextRoom ? roomLabel(settings.nextRoom) : "Not configured");
   document.querySelector("#nextRoomPerson") && (document.querySelector("#nextRoomPerson").textContent = roomLabel(settings.nextRoom));
   document.querySelector("#nextRoomAvatar") && (document.querySelector("#nextRoomAvatar").src = avatarSrc(nextRoomData));
   const nextCollection = assignedTurnInfo(nextRoomData || settings.nextRoom);
@@ -307,10 +343,10 @@ function renderDashboard() {
   document.querySelector("#gardenWasteDay") && (document.querySelector("#gardenWasteDay").textContent = gardenWasteValue ? nextDateForDay(gardenWasteValue) : "Not configured");
   document.querySelector("#weeklyReminder") && (document.querySelector("#weeklyReminder").textContent = settings.updateDay && settings.updateDay !== "None" ? `Bins rotate every ${nextDateForDay(settings.updateDay)}.` : "Set a weekly update day in admin.");
 
-  document.querySelector("#overviewRecycling") && (document.querySelector("#overviewRecycling").textContent = recyclingValue ? nextDateForDay(recyclingValue) : "Not configured");
-  document.querySelector("#overviewGeneral") && (document.querySelector("#overviewGeneral").textContent = generalWasteValue ? nextDateForDay(generalWasteValue) : "Not configured");
-  document.querySelector("#overviewGarden") && (document.querySelector("#overviewGarden").textContent = gardenWasteValue ? nextDateForDay(gardenWasteValue) : "Not configured");
-  document.querySelector("#overviewUpdate") && (document.querySelector("#overviewUpdate").textContent = settings.updateDay ? nextDateForDay(settings.updateDay) : "Not configured");
+  document.querySelector("#overviewRecycling") && (document.querySelector("#overviewRecycling").textContent = formatIfThisWeek(recyclingValue));
+  document.querySelector("#overviewGeneral") && (document.querySelector("#overviewGeneral").textContent = formatIfThisWeek(generalWasteValue));
+  document.querySelector("#overviewGarden") && (document.querySelector("#overviewGarden").textContent = formatIfThisWeek(gardenWasteValue));
+  document.querySelector("#overviewUpdate") && (document.querySelector("#overviewUpdate").textContent = formatIfThisWeek(settings.updateDate || settings.updateDay));
   document.querySelector("#weekRange") && (document.querySelector("#weekRange").textContent = weekRangeText());
 
   renderDashboardRotation();
@@ -319,17 +355,15 @@ function renderDashboard() {
 function renderDashboardRotation() {
   const target = document.querySelector("#dashboardRotation");
   if (!target) return;
-  const ordered = [...rooms].sort((a, b) => a.turnOrder - b.turnOrder);
-  target.innerHTML = ordered.map((room, index) => `
-    <div class="rotation-bubble ${roomMatches(room, settings.currentRoom) ? "active" : ""}">
+  const assignments = configuredAssignments();
+  target.innerHTML = assignments.map((assignment) => `
+    <div class="rotation-bubble ${assignment.key === "current" ? "active" : ""}">
       <div><span>H</span></div>
-      <strong>${escapeHtml(room.roomName || `Room ${index + 1}`)}</strong>
-      <small>${(() => {
-        const info = assignedTurnInfo(room);
-        return collectionLabelForTask(info);
-      })()}</small>
+      <strong>${escapeHtml(assignment.room.displayName || assignment.room.roomName || "Room")}</strong>
+      <small>${escapeHtml(assignment.room.roomName || "")}</small>
+      <small>${collectionLabelForTask(assignment.info)}</small>
     </div>
-  `).join("") || `<div class="empty-card">Add rooms in Firestore to build the rotation.</div>`;
+  `).join("") || `<div class="empty-card">Assign room, trash type and date in admin to build the rotation.</div>`;
 }
 
 function renderSchedule() {
@@ -348,13 +382,14 @@ function renderSchedule() {
   grid.innerHTML = days.map((day) => `<div class="date-cell day-name">${day}</div>`).join("") +
     dates.map((date) => `<div class="date-cell ${date === today.getDate() ? "active" : ""}">${date}</div>`).join("");
   const list = document.querySelector("#rotationList");
-  list.innerHTML = rooms.map((room, index) => `
+  const assignments = configuredAssignments();
+  list.innerHTML = assignments.map((assignment) => `
     <div class="timeline-row">
-      <img class="avatar" src="${avatarSrc(room)}" alt="">
-      <div><strong>${escapeHtml(room.displayName || room.roomName)}</strong><div class="meta">${escapeHtml(room.roomName)}</div></div>
-      <span class="pill">${roomMatches(room, settings.currentRoom) ? "This week" : index === 1 ? "Next" : `Week ${index + 1}`}</span>
+      <img class="avatar" src="${avatarSrc(assignment.room)}" alt="">
+      <div><strong>${escapeHtml(assignment.room.displayName || assignment.room.roomName)}</strong><div class="meta">${collectionLabelForTask(assignment.info)}</div></div>
+      <span class="pill">${assignment.label}</span>
     </div>
-  `).join("") || `<div class="timeline-row"><div><strong>No rooms configured</strong><div class="meta">Add rooms in Firestore to build the rotation.</div></div></div>`;
+  `).join("") || `<div class="timeline-row"><div><strong>No assignments configured</strong><div class="meta">Assign room, trash type and date in admin.</div></div></div>`;
 }
 
 function renderHistory(items) {
@@ -402,10 +437,10 @@ async function moveToNext(action) {
     return;
   }
   await saveSettings({
-    currentRoom: next.roomName,
+    currentRoom: next.id,
     currentTrashType: settings.nextTrashType || settings.currentTrashType || "General waste",
     currentTrashDate: settings.nextTrashDate || settings.currentTrashDate || "",
-    nextRoom: after.roomName,
+    nextRoom: after.id,
     nextTrashType: "",
     nextTrashDate: ""
   });

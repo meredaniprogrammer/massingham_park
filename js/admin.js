@@ -11,6 +11,27 @@ const trashTypes = ["Recycling", "General waste", "Garden waste"];
 let rooms = [];
 let settings = {};
 
+function roomDisplay(room) {
+  if (!room) return "No room set";
+  const name = room.displayName || "Not named";
+  const roomName = room.roomName || `Room ${room.turnOrder || ""}`.trim() || room.id;
+  return `${name} (${roomName})`;
+}
+
+function findRoom(value) {
+  const key = String(value || "").trim().toLowerCase();
+  return rooms.find((room) => [
+    room.id,
+    room.roomName,
+    room.displayName,
+    room.turnOrder ? `Room ${room.turnOrder}` : ""
+  ].some((candidate) => String(candidate || "").trim().toLowerCase() === key));
+}
+
+function roomIdFor(value) {
+  return findRoom(value)?.id || value || "";
+}
+
 function fillSelect(select, values, valueKey = null) {
   if (!select) return;
   select.innerHTML = values.map((item) => {
@@ -24,14 +45,20 @@ function populateAdminForm() {
   dayIds.forEach((id) => fillSelect(document.querySelector(`#${id}`), days));
   fillSelect(document.querySelector("#currentTrashTypeInput"), trashTypes);
   fillSelect(document.querySelector("#nextTrashTypeInput"), trashTypes);
-  fillSelect(document.querySelector("#currentRoomInput"), rooms, "roomName");
-  fillSelect(document.querySelector("#nextRoomInput"), rooms, "roomName");
+  const currentRoomSelect = document.querySelector("#currentRoomInput");
+  const nextRoomSelect = document.querySelector("#nextRoomInput");
+  if (currentRoomSelect) {
+    currentRoomSelect.innerHTML = rooms.map((r) => `<option value="${r.id}">${roomDisplay(r)}</option>`).join("");
+  }
+  if (nextRoomSelect) {
+    nextRoomSelect.innerHTML = rooms.map((r) => `<option value="${r.id}">${roomDisplay(r)}</option>`).join("");
+  }
   const map = {
     updateDayInput: settings.updateDay,
-    currentRoomInput: settings.currentRoom,
+    currentRoomInput: roomIdFor(settings.currentRoom),
     currentTrashTypeInput: settings.currentTrashType,
     currentTrashDateInput: settings.currentTrashDate,
-    nextRoomInput: settings.nextRoom,
+    nextRoomInput: roomIdFor(settings.nextRoom),
     nextTrashTypeInput: settings.nextTrashType,
     nextTrashDateInput: settings.nextTrashDate
   };
@@ -40,7 +67,13 @@ function populateAdminForm() {
     if (el && value) el.value = value;
   });
   const overview = document.querySelector("#adminOverview");
-  if (overview) overview.textContent = settings.currentRoom ? `${settings.currentRoom} is responsible. ${settings.nextRoom || "No next room set"} is next.` : "Configure rooms and waste settings to start.";
+  if (overview) {
+    if (settings.currentRoom) {
+      overview.textContent = `${roomDisplay(findRoom(settings.currentRoom))} is responsible. ${roomDisplay(findRoom(settings.nextRoom))} is next.`;
+    } else {
+      overview.textContent = "Configure rooms and waste settings to start.";
+    }
+  }
 }
 
 function renderRooms() {
@@ -73,10 +106,10 @@ document.querySelector("#wasteSettingsForm")?.addEventListener("submit", async (
   const nextTrashDateInput = document.querySelector("#nextTrashDateInput");
   await saveSettings({
     updateDay: updateDayInput.value,
-    currentRoom: currentRoomInput.value,
+    currentRoom: currentRoomInput.value, // now stores room id
     currentTrashType: currentTrashTypeInput.value,
     currentTrashDate: currentTrashDateInput.value,
-    nextRoom: nextRoomInput.value,
+    nextRoom: nextRoomInput.value, // now stores room id
     nextTrashType: nextTrashTypeInput.value,
     nextTrashDate: nextTrashDateInput.value
   });
@@ -90,14 +123,14 @@ document.querySelector("#rotateTasks")?.addEventListener("click", async () => {
     toast("No rooms are configured yet.");
     return;
   }
-  const index = Math.max(0, ordered.findIndex((room) => room.roomName === settings.currentRoom));
+  const index = Math.max(0, ordered.findIndex((room) => room.id === settings.currentRoom));
   const next = ordered[(index + 1) % ordered.length];
   const after = ordered[(index + 2) % ordered.length];
   await saveSettings({
-    currentRoom: next.roomName,
+    currentRoom: next.id,
     currentTrashType: settings.nextTrashType || settings.currentTrashType || "General waste",
     currentTrashDate: settings.nextTrashDate || settings.currentTrashDate || "",
-    nextRoom: after.roomName,
+    nextRoom: after.id,
     nextTrashType: "",
     nextTrashDate: ""
   });
