@@ -24,6 +24,24 @@ function greetingName() {
   return currentRoom?.displayName || currentRoom?.roomName || "there";
 }
 
+function timeGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 16) return "Good afternoon";
+  return "Good evening";
+}
+
+function nextDateForDay(dayName) {
+  const normalized = String(dayName || "").trim().toLowerCase();
+  if (!normalized || normalized === "none") return "None";
+  const dayIndex = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"].indexOf(normalized);
+  if (dayIndex === -1) return dayName || "Not configured";
+  const date = new Date();
+  const diff = (dayIndex - date.getDay() + 7) % 7;
+  date.setDate(date.getDate() + diff);
+  return date.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
+}
+
 function weekRangeText(offset = 0) {
   const now = new Date();
   const day = now.getDay() || 7;
@@ -59,7 +77,7 @@ function renderDashboard() {
   const isMyTurn = settings.currentRoom && settings.currentRoom === currentRoom?.roomName;
   const nextRoomData = rooms.find((room) => room.roomName === settings.nextRoom);
 
-  greeting.textContent = `Good morning, ${greetingName()}!`;
+  greeting.textContent = `${timeGreeting()}, ${greetingName()}!`;
   document.querySelector("#encouragementTitle") && (document.querySelector("#encouragementTitle").textContent = `Keep it up, ${greetingName()}!`);
   document.querySelector("#currentResponsibility").textContent = settings.currentRoom
     ? (isMyTurn ? "It's your turn!" : `${roomLabel(settings.currentRoom)} is responsible`)
@@ -74,15 +92,15 @@ function renderDashboard() {
   document.querySelector("#nextRoomAvatar") && (document.querySelector("#nextRoomAvatar").src = avatarSrc(nextRoomData));
   document.querySelector("#nextRoomDates") && (document.querySelector("#nextRoomDates").textContent = "Upcoming turn");
 
-  document.querySelector("#recyclingDay") && (document.querySelector("#recyclingDay").textContent = settings.recyclingDay || "Not configured");
-  document.querySelector("#generalWasteDay") && (document.querySelector("#generalWasteDay").textContent = settings.generalWasteDay || "Not configured");
-  document.querySelector("#gardenWasteDay") && (document.querySelector("#gardenWasteDay").textContent = settings.gardenWasteDay || "Not configured");
-  document.querySelector("#weeklyReminder") && (document.querySelector("#weeklyReminder").textContent = settings.updateDay ? `Bins rotate every ${settings.updateDay}.` : "Set a weekly update day in admin.");
+  document.querySelector("#recyclingDay") && (document.querySelector("#recyclingDay").textContent = settings.recyclingDay ? nextDateForDay(settings.recyclingDay) : "Not configured");
+  document.querySelector("#generalWasteDay") && (document.querySelector("#generalWasteDay").textContent = settings.generalWasteDay ? nextDateForDay(settings.generalWasteDay) : "Not configured");
+  document.querySelector("#gardenWasteDay") && (document.querySelector("#gardenWasteDay").textContent = settings.gardenWasteDay ? nextDateForDay(settings.gardenWasteDay) : "Not configured");
+  document.querySelector("#weeklyReminder") && (document.querySelector("#weeklyReminder").textContent = settings.updateDay && settings.updateDay !== "None" ? `Bins rotate every ${nextDateForDay(settings.updateDay)}.` : "Set a weekly update day in admin.");
 
-  document.querySelector("#overviewRecycling") && (document.querySelector("#overviewRecycling").textContent = settings.recyclingDay || "Not configured");
-  document.querySelector("#overviewGeneral") && (document.querySelector("#overviewGeneral").textContent = settings.generalWasteDay || "Not configured");
-  document.querySelector("#overviewGarden") && (document.querySelector("#overviewGarden").textContent = settings.gardenWasteDay || "Not configured");
-  document.querySelector("#overviewUpdate") && (document.querySelector("#overviewUpdate").textContent = settings.updateDay || "Not configured");
+  document.querySelector("#overviewRecycling") && (document.querySelector("#overviewRecycling").textContent = settings.recyclingDay ? nextDateForDay(settings.recyclingDay) : "Not configured");
+  document.querySelector("#overviewGeneral") && (document.querySelector("#overviewGeneral").textContent = settings.generalWasteDay ? nextDateForDay(settings.generalWasteDay) : "Not configured");
+  document.querySelector("#overviewGarden") && (document.querySelector("#overviewGarden").textContent = settings.gardenWasteDay ? nextDateForDay(settings.gardenWasteDay) : "Not configured");
+  document.querySelector("#overviewUpdate") && (document.querySelector("#overviewUpdate").textContent = settings.updateDay ? nextDateForDay(settings.updateDay) : "Not configured");
   document.querySelector("#weekRange") && (document.querySelector("#weekRange").textContent = weekRangeText());
 
   renderDashboardRotation();
@@ -104,9 +122,9 @@ function renderDashboardRotation() {
 function renderSchedule() {
   const grid = document.querySelector("#calendarGrid");
   if (!grid) return;
-  document.querySelector("#scheduleRecycling").textContent = settings.recyclingDay || "Not configured";
-  document.querySelector("#scheduleGeneral").textContent = settings.generalWasteDay || "Not configured";
-  document.querySelector("#scheduleGarden").textContent = settings.gardenWasteDay || "Not configured";
+  document.querySelector("#scheduleRecycling").textContent = settings.recyclingDay ? nextDateForDay(settings.recyclingDay) : "Not configured";
+  document.querySelector("#scheduleGeneral").textContent = settings.generalWasteDay ? nextDateForDay(settings.generalWasteDay) : "Not configured";
+  document.querySelector("#scheduleGarden").textContent = settings.gardenWasteDay ? nextDateForDay(settings.gardenWasteDay) : "Not configured";
   const today = new Date();
   document.querySelector("#calendarMonth").textContent = today.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -174,7 +192,7 @@ async function moveToNext(action) {
 function bindTurnActions() {
   const title = document.querySelector("#turnTitle");
   if (title) title.textContent = settings.currentRoom ? (settings.currentRoom === currentRoom?.roomName ? `It's your turn, ${greetingName()}!` : `${roomLabel(settings.currentRoom)} has this turn`) : "No active turn configured";
-  document.querySelector("#trashDate") && (document.querySelector("#trashDate").textContent = settings.generalWasteDay || "Not configured");
+  document.querySelector("#trashDate") && (document.querySelector("#trashDate").textContent = settings.generalWasteDay ? nextDateForDay(settings.generalWasteDay) : "Not configured");
   document.querySelector("#completeTask")?.addEventListener("click", async () => {
     if (settings.currentRoom !== currentRoom?.roomName) return toast("This turn belongs to another room.");
     await moveToNext(`${greetingName()} completed the task`);

@@ -6,7 +6,7 @@ import {
 requireAdminSession();
 nav("admin");
 
-const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const days = ["None", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 let rooms = [];
 let settings = {};
 
