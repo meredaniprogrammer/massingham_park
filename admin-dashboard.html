@@ -18,15 +18,13 @@
       <section class="admin-grid">
         <form id="wasteSettingsForm" class="settings-card form-stack">
           <div class="form-grid">
-            <label>Recycling date<input id="recyclingDateInput" type="date"></label>
-            <label>General waste date<input id="generalWasteDateInput" type="date"></label>
-            <label>Garden waste date<input id="gardenWasteDateInput" type="date"></label>
-            <label class="checkbox-line"><input id="recyclingNoneInput" type="checkbox"> No recycling collection</label>
-            <label class="checkbox-line"><input id="generalWasteNoneInput" type="checkbox"> No general waste collection</label>
-            <label class="checkbox-line"><input id="gardenWasteNoneInput" type="checkbox"> No garden waste collection</label>
-            <label>Weekly update day<select id="updateDayInput"></select></label>
             <label>Current responsible room<select id="currentRoomInput"></select></label>
+            <label>Current trash type<select id="currentTrashTypeInput"></select></label>
+            <label>Current trash date<input id="currentTrashDateInput" type="date"></label>
             <label>Next room<select id="nextRoomInput"></select></label>
+            <label>Next trash type<select id="nextTrashTypeInput"></select></label>
+            <label>Next trash date<input id="nextTrashDateInput" type="date"></label>
+            <label>Weekly update day<select id="updateDayInput"></select></label>
           </div>
           <div class="action-row inline"><button class="btn btn-primary" type="submit">Save Updates</button><button id="rotateTasks" class="btn btn-soft" type="button">Rotate Tasks</button><a class="btn btn-soft" href="notice-management.html">Publish Notice</a></div>
         </form>

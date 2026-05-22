@@ -7,35 +7,9 @@ requireAdminSession();
 nav("admin");
 
 const days = ["None", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const trashTypes = ["Recycling", "General waste", "Garden waste"];
 let rooms = [];
 let settings = {};
-
-function setCollectionDate(name, value) {
-  const dateInput = document.querySelector(`#${name}DateInput`);
-  const noneInput = document.querySelector(`#${name}NoneInput`);
-  if (!dateInput || !noneInput) return;
-  const isNone = value === "None";
-  noneInput.checked = isNone;
-  dateInput.disabled = isNone;
-  dateInput.value = isNone ? "" : (value || "");
-}
-
-function readCollectionDate(name) {
-  const dateInput = document.querySelector(`#${name}DateInput`);
-  const noneInput = document.querySelector(`#${name}NoneInput`);
-  if (noneInput?.checked) return "None";
-  return dateInput?.value || "";
-}
-
-function bindNoneToggle(name) {
-  const dateInput = document.querySelector(`#${name}DateInput`);
-  const noneInput = document.querySelector(`#${name}NoneInput`);
-  noneInput?.addEventListener("change", () => {
-    if (!dateInput) return;
-    dateInput.disabled = noneInput.checked;
-    if (noneInput.checked) dateInput.value = "";
-  });
-}
 
 function fillSelect(select, values, valueKey = null) {
   if (!select) return;
@@ -48,15 +22,18 @@ function fillSelect(select, values, valueKey = null) {
 function populateAdminForm() {
   const dayIds = ["updateDayInput"];
   dayIds.forEach((id) => fillSelect(document.querySelector(`#${id}`), days));
-  setCollectionDate("recycling", settings.recyclingDate || settings.recyclingDay);
-  setCollectionDate("generalWaste", settings.generalWasteDate || settings.generalWasteDay);
-  setCollectionDate("gardenWaste", settings.gardenWasteDate || settings.gardenWasteDay);
+  fillSelect(document.querySelector("#currentTrashTypeInput"), trashTypes);
+  fillSelect(document.querySelector("#nextTrashTypeInput"), trashTypes);
   fillSelect(document.querySelector("#currentRoomInput"), rooms, "roomName");
   fillSelect(document.querySelector("#nextRoomInput"), rooms, "roomName");
   const map = {
     updateDayInput: settings.updateDay,
     currentRoomInput: settings.currentRoom,
-    nextRoomInput: settings.nextRoom
+    currentTrashTypeInput: settings.currentTrashType,
+    currentTrashDateInput: settings.currentTrashDate,
+    nextRoomInput: settings.nextRoom,
+    nextTrashTypeInput: settings.nextTrashType,
+    nextTrashDateInput: settings.nextTrashDate
   };
   Object.entries(map).forEach(([id, value]) => {
     const el = document.querySelector(`#${id}`);
@@ -89,26 +66,23 @@ document.querySelector("#wasteSettingsForm")?.addEventListener("submit", async (
   event.preventDefault();
   const updateDayInput = document.querySelector("#updateDayInput");
   const currentRoomInput = document.querySelector("#currentRoomInput");
+  const currentTrashTypeInput = document.querySelector("#currentTrashTypeInput");
+  const currentTrashDateInput = document.querySelector("#currentTrashDateInput");
   const nextRoomInput = document.querySelector("#nextRoomInput");
-  const recyclingDate = readCollectionDate("recycling");
-  const generalWasteDate = readCollectionDate("generalWaste");
-  const gardenWasteDate = readCollectionDate("gardenWaste");
+  const nextTrashTypeInput = document.querySelector("#nextTrashTypeInput");
+  const nextTrashDateInput = document.querySelector("#nextTrashDateInput");
   await saveSettings({
-    recyclingDate,
-    generalWasteDate,
-    gardenWasteDate,
-    recyclingDay: recyclingDate,
-    generalWasteDay: generalWasteDate,
-    gardenWasteDay: gardenWasteDate,
     updateDay: updateDayInput.value,
     currentRoom: currentRoomInput.value,
-    nextRoom: nextRoomInput.value
+    currentTrashType: currentTrashTypeInput.value,
+    currentTrashDate: currentTrashDateInput.value,
+    nextRoom: nextRoomInput.value,
+    nextTrashType: nextTrashTypeInput.value,
+    nextTrashDate: nextTrashDateInput.value
   });
   await createHistory("Admin updated recycling and waste days", "Admin");
   toast("Waste settings saved.");
 });
-
-["recycling", "generalWaste", "gardenWaste"].forEach(bindNoneToggle);
 
 document.querySelector("#rotateTasks")?.addEventListener("click", async () => {
   const ordered = [...rooms].sort((a, b) => a.turnOrder - b.turnOrder);
@@ -119,7 +93,14 @@ document.querySelector("#rotateTasks")?.addEventListener("click", async () => {
   const index = Math.max(0, ordered.findIndex((room) => room.roomName === settings.currentRoom));
   const next = ordered[(index + 1) % ordered.length];
   const after = ordered[(index + 2) % ordered.length];
-  await saveSettings({ currentRoom: next.roomName, nextRoom: after.roomName });
+  await saveSettings({
+    currentRoom: next.roomName,
+    currentTrashType: settings.nextTrashType || settings.currentTrashType || "General waste",
+    currentTrashDate: settings.nextTrashDate || settings.currentTrashDate || "",
+    nextRoom: after.roomName,
+    nextTrashType: "",
+    nextTrashDate: ""
+  });
   await createHistory(`Admin rotated tasks to ${next.roomName}`, "Admin");
   toast("Tasks rotated.");
 });

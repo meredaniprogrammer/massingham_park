@@ -78,6 +78,12 @@ button { cursor: pointer; border: 0; }
 }
 .btn:hover { transform: translateY(-2px); }
 .btn:active { transform: translateY(0) scale(.98); }
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: .62;
+  transform: none;
+  box-shadow: none;
+}
 .btn-primary { color: white; background: linear-gradient(135deg, var(--primary), #7f5fff); box-shadow: 0 16px 32px rgba(108, 77, 255, .28); }
 .btn-soft { color: var(--primary-dark); background: var(--accent); }
 .btn.full { width: 100%; }
