@@ -112,10 +112,15 @@ export async function validateRoomCode(code) {
 
 export async function validateAdmin(adminId, pin) {
   if (isDemo) return false;
-  const snap = await getDocs(query(collection(db, "admin"), where("adminId", "==", adminId), limit(1)));
-  if (snap.empty) return false;
-  const admin = snap.docs[0].data();
-  return String(admin.pin || "").trim() === String(pin || "").trim();
+  const cleanAdminId = String(adminId || "").trim().toLowerCase();
+  const cleanPin = String(pin || "").trim();
+  const snap = await getDocs(collection(db, "admin"));
+  return snap.docs.some((adminDoc) => {
+    const admin = adminDoc.data();
+    const storedAdminId = String(admin.adminId || adminDoc.id || "").trim().toLowerCase();
+    const storedPin = String(admin.pin || "").trim();
+    return storedAdminId === cleanAdminId && storedPin === cleanPin;
+  });
 }
 
 export async function getRoom(id) {
