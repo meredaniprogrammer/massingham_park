@@ -89,10 +89,24 @@ function collectionSchedule() {
     { type: "Garden waste", value: settings.gardenWasteDate || settings.gardenWasteDay }
   ];
   const today = startOfToday();
-  return items
+  const upcoming = items
     .map((item) => ({ ...item, date: dateFromScheduleValue(item.value) }))
     .filter((item) => item.date && item.date >= today)
     .sort((a, b) => a.date - b.date);
+
+  const grouped = new Map();
+  upcoming.forEach((item) => {
+    const key = [
+      item.date.getFullYear(),
+      String(item.date.getMonth() + 1).padStart(2, "0"),
+      String(item.date.getDate()).padStart(2, "0")
+    ].join("-");
+    const existing = grouped.get(key) || { date: item.date, types: [] };
+    existing.types.push(item.type);
+    grouped.set(key, existing);
+  });
+
+  return [...grouped.values()].sort((a, b) => a.date - b.date);
 }
 
 function turnCollectionInfo(roomName) {
@@ -120,6 +134,11 @@ function turnCollectionDate(roomName) {
 function reminderTextForDate(collectionDate) {
   if (!collectionDate) return "Set a collection date in admin.";
   return `Put the bin out on ${formatCollectionDate(addDays(collectionDate, -1))} night.`;
+}
+
+function collectionLabel(info) {
+  if (!info) return "No collection date";
+  return `${info.types.join(" + ")} · ${formatCollectionDate(info.date)}`;
 }
 
 function weekRangeText(offset = 0) {
@@ -171,7 +190,7 @@ function renderDashboard() {
   document.querySelector("#nextRoomPerson") && (document.querySelector("#nextRoomPerson").textContent = roomLabel(settings.nextRoom));
   document.querySelector("#nextRoomAvatar") && (document.querySelector("#nextRoomAvatar").src = avatarSrc(nextRoomData));
   const nextCollection = turnCollectionInfo(settings.nextRoom);
-  document.querySelector("#nextRoomDates") && (document.querySelector("#nextRoomDates").textContent = nextCollection ? `${nextCollection.type} · ${formatCollectionDate(nextCollection.date)}` : "No collection date");
+  document.querySelector("#nextRoomDates") && (document.querySelector("#nextRoomDates").textContent = collectionLabel(nextCollection));
 
   const recyclingValue = settings.recyclingDate || settings.recyclingDay;
   const generalWasteValue = settings.generalWasteDate || settings.generalWasteDay;
@@ -201,7 +220,7 @@ function renderDashboardRotation() {
       <strong>${escapeHtml(room.roomName || `Room ${index + 1}`)}</strong>
       <small>${(() => {
         const info = turnCollectionInfo(room.roomName);
-        return info ? `${info.type} · ${formatCollectionDate(info.date)}` : "No collection date";
+        return collectionLabel(info);
       })()}</small>
     </div>
   `).join("") || `<div class="empty-card">Add rooms in Firestore to build the rotation.</div>`;
@@ -284,7 +303,7 @@ function bindTurnActions() {
   const title = document.querySelector("#turnTitle");
   if (title) title.textContent = settings.currentRoom ? (settings.currentRoom === currentRoom?.roomName ? `It's your turn, ${greetingName()}!` : `${roomLabel(settings.currentRoom)} has this turn`) : "No active turn configured";
   const userCollection = turnCollectionInfo(currentRoom?.roomName);
-  document.querySelector("#trashDate") && (document.querySelector("#trashDate").textContent = userCollection ? `${userCollection.type} · ${formatCollectionDate(userCollection.date)}` : "Not configured");
+  document.querySelector("#trashDate") && (document.querySelector("#trashDate").textContent = userCollection ? collectionLabel(userCollection) : "Not configured");
   document.querySelector("#trashReminder") && (document.querySelector("#trashReminder").textContent = reminderTextForDate(userCollection?.date));
   document.querySelector("#completeTask")?.addEventListener("click", async () => {
     if (settings.currentRoom !== currentRoom?.roomName) return toast("This turn belongs to another room.");
