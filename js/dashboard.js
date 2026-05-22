@@ -76,16 +76,45 @@ function addDays(date, days) {
   return next;
 }
 
-function turnCollectionDate(roomName, scheduleValue = settings.generalWasteDate || settings.generalWasteDay) {
-  const baseDate = dateFromScheduleValue(scheduleValue);
-  if (!baseDate || !roomName) return null;
+function startOfToday() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today;
+}
+
+function collectionSchedule() {
+  const items = [
+    { type: "Recycling", value: settings.recyclingDate || settings.recyclingDay },
+    { type: "General waste", value: settings.generalWasteDate || settings.generalWasteDay },
+    { type: "Garden waste", value: settings.gardenWasteDate || settings.gardenWasteDay }
+  ];
+  const today = startOfToday();
+  return items
+    .map((item) => ({ ...item, date: dateFromScheduleValue(item.value) }))
+    .filter((item) => item.date && item.date >= today)
+    .sort((a, b) => a.date - b.date);
+}
+
+function turnCollectionInfo(roomName) {
+  if (!roomName) return null;
+  const schedule = collectionSchedule();
+  if (!schedule.length) return null;
   const ordered = [...rooms].sort((a, b) => a.turnOrder - b.turnOrder);
-  if (!ordered.length) return baseDate;
+  if (!ordered.length) return schedule[0];
   const currentIndex = Math.max(0, ordered.findIndex((room) => room.roomName === settings.currentRoom));
   const roomIndex = ordered.findIndex((room) => room.roomName === roomName);
-  if (roomIndex === -1) return baseDate;
-  const weekOffset = (roomIndex - currentIndex + ordered.length) % ordered.length;
-  return addDays(baseDate, weekOffset * 7);
+  if (roomIndex === -1) return schedule[0];
+  const scheduleOffset = (roomIndex - currentIndex + ordered.length) % ordered.length;
+  if (schedule[scheduleOffset]) return schedule[scheduleOffset];
+  const lastKnown = schedule[schedule.length - 1];
+  return {
+    ...lastKnown,
+    date: addDays(lastKnown.date, 7 * (scheduleOffset - schedule.length + 1))
+  };
+}
+
+function turnCollectionDate(roomName) {
+  return turnCollectionInfo(roomName)?.date || null;
 }
 
 function reminderTextForDate(collectionDate) {
@@ -141,7 +170,8 @@ function renderDashboard() {
   document.querySelector("#nextRoomName") && (document.querySelector("#nextRoomName").textContent = settings.nextRoom || "Not configured");
   document.querySelector("#nextRoomPerson") && (document.querySelector("#nextRoomPerson").textContent = roomLabel(settings.nextRoom));
   document.querySelector("#nextRoomAvatar") && (document.querySelector("#nextRoomAvatar").src = avatarSrc(nextRoomData));
-  document.querySelector("#nextRoomDates") && (document.querySelector("#nextRoomDates").textContent = formatCollectionDate(turnCollectionDate(settings.nextRoom)));
+  const nextCollection = turnCollectionInfo(settings.nextRoom);
+  document.querySelector("#nextRoomDates") && (document.querySelector("#nextRoomDates").textContent = nextCollection ? `${nextCollection.type} · ${formatCollectionDate(nextCollection.date)}` : "No collection date");
 
   const recyclingValue = settings.recyclingDate || settings.recyclingDay;
   const generalWasteValue = settings.generalWasteDate || settings.generalWasteDay;
@@ -169,7 +199,10 @@ function renderDashboardRotation() {
     <div class="rotation-bubble ${room.roomName === settings.currentRoom ? "active" : ""}">
       <div><span>H</span></div>
       <strong>${escapeHtml(room.roomName || `Room ${index + 1}`)}</strong>
-      <small>${formatCollectionDate(turnCollectionDate(room.roomName))}</small>
+      <small>${(() => {
+        const info = turnCollectionInfo(room.roomName);
+        return info ? `${info.type} · ${formatCollectionDate(info.date)}` : "No collection date";
+      })()}</small>
     </div>
   `).join("") || `<div class="empty-card">Add rooms in Firestore to build the rotation.</div>`;
 }
@@ -250,9 +283,9 @@ async function moveToNext(action) {
 function bindTurnActions() {
   const title = document.querySelector("#turnTitle");
   if (title) title.textContent = settings.currentRoom ? (settings.currentRoom === currentRoom?.roomName ? `It's your turn, ${greetingName()}!` : `${roomLabel(settings.currentRoom)} has this turn`) : "No active turn configured";
-  const userCollectionDate = turnCollectionDate(currentRoom?.roomName);
-  document.querySelector("#trashDate") && (document.querySelector("#trashDate").textContent = userCollectionDate ? formatCollectionDate(userCollectionDate) : "Not configured");
-  document.querySelector("#trashReminder") && (document.querySelector("#trashReminder").textContent = reminderTextForDate(userCollectionDate));
+  const userCollection = turnCollectionInfo(currentRoom?.roomName);
+  document.querySelector("#trashDate") && (document.querySelector("#trashDate").textContent = userCollection ? `${userCollection.type} · ${formatCollectionDate(userCollection.date)}` : "Not configured");
+  document.querySelector("#trashReminder") && (document.querySelector("#trashReminder").textContent = reminderTextForDate(userCollection?.date));
   document.querySelector("#completeTask")?.addEventListener("click", async () => {
     if (settings.currentRoom !== currentRoom?.roomName) return toast("This turn belongs to another room.");
     await moveToNext(`${greetingName()} completed the task`);
