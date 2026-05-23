@@ -3,9 +3,6 @@ import {
   getFirestore, collection, doc, getDocs, getDoc, addDoc, updateDoc, setDoc,
   query, where, orderBy, limit, onSnapshot, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-import {
-  getStorage, ref, uploadBytes, getDownloadURL
-} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBMNZqftNtpHVpRufvipO_NfQxcqYgUszI",
@@ -20,7 +17,6 @@ const firebaseConfig = {
 const hasFirebaseConfig = !firebaseConfig.apiKey.startsWith("PASTE_");
 export const app = hasFirebaseConfig ? initializeApp(firebaseConfig) : null;
 export const db = app ? getFirestore(app) : null;
-export const storage = app ? getStorage(app) : null;
 
 const emptySettings = {
   id: "main",
@@ -159,18 +155,6 @@ export async function updateRoom(id, data) {
     return;
   }
   await updateDoc(doc(db, "rooms", id), data);
-}
-
-export async function uploadProfilePhoto(roomId, file) {
-  if (!file) return "";
-  if (isDemo) return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.readAsDataURL(file);
-  });
-  const fileRef = ref(storage, `profiles/${roomId}/${Date.now()}-${file.name}`);
-  await uploadBytes(fileRef, file);
-  return getDownloadURL(fileRef);
 }
 
 export function subscribeRooms(callback) {
